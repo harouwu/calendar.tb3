@@ -143,7 +143,7 @@ function build {
     cd $BASE; mv tmp tmp-${arch}; ( rm -rf ./tmp-${arch} ) &
 }
 
-for arch in win32 # mac linux-i686 linux-x86_64
+for arch in win32 mac linux-i686 linux-x86_64
 do
     setup_cpp
     build
