@@ -53,6 +53,21 @@ Components.utils.import("resource://calendar/modules/calAuthUtils.jsm");
 //
 // calDavCalendar.js
 //
+function backtrace(aDepth) {
+    let depth = aDepth || 10;
+    let stack = "";
+    let frame = arguments.callee.caller;
+
+    for (let i = 1; i <= depth; i++) {
+        stack += i+": "+ frame.name + "\n";
+        frame = frame.caller;
+        if (!frame){
+            break;
+        }
+    }
+
+    return stack;
+}
 
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
 
@@ -80,6 +95,32 @@ function calDavCalendar() {
     // By default, support both events and todos.
     this.mGenerallySupportedItemTypes = ["VEVENT", "VTODO"];
     this.mSupportedItemTypes = this.mGenerallySupportedItemTypes.slice(0);
+    this.readOnly = true;
+    this.disabled = true;
+     // Inverse inc. ACL addition
+    this.mACLMgr = null;
+    try {
+        var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                     .getService(Components.interfaces.nsISupports)
+                     .wrappedJSObject;
+        var observerService = Components.classes["@mozilla.org/observer-service;1"]
+                              .getService(Components.interfaces.nsIObserverService);
+        observerService.addObserver(this, "caldav-acl-loaded", false);
+        observerService.addObserver(this, "caldav-acl-reset", false);
+        this.mACLMgr = aclMgr;
+    } catch(e) {
+    }
+
+    var refreshDelay = getPrefSafe("calendar.caldav.refresh.initialdelay", 0);
+    if (refreshDelay > 0) {
+        var now = (new Date()).getTime();
+        this.mFirstRefreshDelay = now + refreshDelay * 1000;
+        LOG("[caldav] first refresh should not occur before: "
+            + this.mFirstRefreshDelay);
+    }
+    else {
+        this.mFirstRefreshDelay = 0;
+    }
 }
 
 // some shorthand
@@ -331,7 +372,8 @@ calDavCalendar.prototype = {
     mCtag: null,
 
     mTargetCalendar: null,
-
+    mHasACLLoaded: false,
+    mACLRefreshData: null,
     // Contains the last valid synctoken returned
     // from the server with Webdav Sync enabled servers
     mWebdavSyncToken: null,
@@ -373,28 +415,71 @@ calDavCalendar.prototype = {
         }
     },
 
-    getProperty: function caldav_getProperty(aName) {
-        switch (aName) {
+ getProperty: function caldav_getProperty(aName) {
+        if (this.mACLMgr) {
+            // Inverse inc. ACL addition
+            switch (aName) {
+            case "organizerId":
+                var entry = this.mACLMgr.calendarEntry(this.uri);
+                if (entry.isCalendarReady() && entry.hasAccessControl && entry.ownerIdentities) {
+                    return "mailto:" + entry.ownerIdentities[0].email;
+                } else if (this.calendarUserAddress) {
+                    return this.calendarUserAddress;
+                }
+                break;
+
+            case "organizerCN":
+                var entry = this.mACLMgr.calendarEntry(this.uri);
+                if (entry.isCalendarReady() && entry.ownerIdentities) {
+                    return entry.ownerIdentities[0].fullName;
+                }
+                break;
+
+            case "imip.identity":
+                var entry = this.mACLMgr.calendarEntry(this.uri);
+                if (entry.isCalendarReady() && entry.ownerIdentities) {
+                    var displayName = entry.ownerIdentities[0].fullName;
+                    var email = entry.ownerIdentities[0].email;
+                    var newIdentity = Components.classes["@mozilla.org/messenger/identity;1"]
+                                      .createInstance(Components.interfaces.nsIMsgIdentity);
+                    newIdentity.identityName = String(displayName + " <" + email + ">");
+                    newIdentity.fullName = String(displayName);
+                    newIdentity.email = String(email);
+                    return newIdentity; 
+                }
+                break;
+                 
+            }
+        } else {
+            switch (aName) {
             case "organizerId":
                 if (this.calendarUserAddress) {
                     return this.calendarUserAddress;
-                } // else use configured email identity
+                }
                 break;
+
             case "organizerCN":
-                return null; // xxx todo
-            case "cache.updateTimer":
-                return getPrefSafe("calendar.autorefresh.timeout");
-            case "itip.transport":
-                if (this.hasAutoScheduling || this.hasScheduling) {
-                    return this.QueryInterface(Components.interfaces.calIItipTransport);
-                } // else use outbound email-based iTIP (from cal.ProviderBase)
                 break;
-            case "capabilities.tasks.supported":
-                return (this.supportedItemTypes.indexOf("VTODO") > -1);
-            case "capabilities.events.supported":
-                return (this.supportedItemTypes.indexOf("VEVENT") > -1);
-            case "capabilities.autoschedule.supported":
-                return this.hasAutoScheduling;
+
+            case "imip.identity":
+                break;
+            }
+        }
+
+        switch(aName) {
+//         case "cache.updateTimer":
+//             return getPrefSafe("calendar.autorefresh.timeout");
+        case "itip.transport":
+            if (this.hasAutoScheduling) {
+                return null;
+            } else if (this.hasScheduling) {
+                return this.QueryInterface(Components.interfaces.calIItipTransport);
+            } // else use outbound email-based iTIP (from calProviderBase.js)
+            break;
+        case "capabilities.tasks.supported":
+            return (this.supportedItemTypes.indexOf("VTODO") > -1);
+        case "capabilities.events.supported":
+            return (this.supportedItemTypes.indexOf("VEVENT") > -1);            
         }
         return this.__proto__.__proto__.getProperty.apply(this, arguments);
     },
@@ -426,7 +511,7 @@ calDavCalendar.prototype = {
                                              flags, buttonLabel1, buttonLabel2,
                                              null, null, {});
 
-        if (choice == 0) {
+        if (choice == 0) {dump("\n\nmodify item------------"+choice)
             if (aMethod == CALDAV_MODIFY_ITEM) {
                 this.doModifyItem(aItem, aOldItem, aListener, true);
             } else {
@@ -1029,8 +1114,27 @@ calDavCalendar.prototype = {
         }
     },
 
-    safeRefresh: function caldav_safeRefresh(aChangeLogListener) {
-        this.ensureTargetCalendar();
+   safeRefresh: function caldav_safeRefresh(aChangeLogListener) {
+        if (!this.mHasACLLoaded) {
+            if (this.mACLMgr) {
+                /* We request the acl manager to load the relevant ACL entries.
+                   Whenever a notification is posted, the refresh will start
+                   again. */
+                this.mACLRefreshData = { changeLogListener: aChangeLogListener };
+                var entry = this.mACLMgr.calendarEntry(this.uri);
+                if (entry.isCalendarReady) {
+                    LOG("[caldav] ACL were already initialized for this calendar");
+                    this.mHasACLLoaded = true;
+                }
+                else {
+                    return;
+                }
+            }
+            else
+                this.mHasACLLoaded = true;
+        }
+
+       this.ensureTargetCalendar();
 
         if (this.mAuthScheme == "Digest") {
             // the auth could have timed out and be in need of renegotiation
@@ -1166,7 +1270,7 @@ calDavCalendar.prototype = {
         };
         cal.sendHttpRequest(cal.createStreamLoader(), httpchannel, streamListener);
     },
-
+	
     refresh: function caldav_refresh() {
         if (!this.mCheckedServerInfo) {
             // If we haven't refreshed yet, then we should check the resource
@@ -1200,6 +1304,21 @@ calDavCalendar.prototype = {
         return false;
     },
 
+    prepRefresh: function caldav_prepRefresh() {
+
+        var itemTypes = this.supportedItemTypes.concat([]);
+        var typesCount = itemTypes.length;
+        var refreshEvent = {};
+        refreshEvent.itemTypes = itemTypes;
+        refreshEvent.typesCount = typesCount;
+        refreshEvent.queryStatuses = [];
+        refreshEvent.itemsNeedFetching = [];
+        refreshEvent.itemsReported = {};
+        refreshEvent.uri = this.calendarUri;
+
+        return refreshEvent;
+    },
+
     /**
      * Get updated items
      *
@@ -1211,7 +1330,13 @@ calDavCalendar.prototype = {
      *                                         calendars.
      */
     getUpdatedItems: function caldav_getUpdatedItems(aUri, aChangeLogListener) {
-        if (this.mDisabled) {
+         if (this.disabled) {
+            // See https://bugzilla.mozilla.org/show_bug.cgi?id=470934
+            this.reenable(aChangeLogListener);
+            return;
+        }
+		
+		if (this.mDisabled) {
             // check if maybe our calendar has become available
             this.checkDavResourceType(aChangeLogListener);
             return;
@@ -1252,7 +1377,7 @@ calDavCalendar.prototype = {
         let streamListener = new etagsHandler(this, aUri, aChangeLogListener);
         httpchannel.asyncOpen(streamListener, httpchannel);
     },
-
+	
     /**
      * @see nsIInterfaceRequestor
      * @see calProviderUtils.jsm
@@ -1872,6 +1997,14 @@ calDavCalendar.prototype = {
 
         this.mReadOnly = true;
         this.mDisabled = true;
+        this.readOnly = true;
+        this.disabled = true;
+if (!message) {
+            // If we don't have a message for this, then its not important
+            // enough to notify.
+            return;
+        }
+
         this.notifyError(aErrNo,
                          calGetString("calendar", message , [this.mUri.spec]));
         this.notifyError(modificationError
@@ -2372,8 +2505,131 @@ calDavCalendar.prototype = {
         copyHeader("If-Match");
 
         aNewChannel.requestMethod = aOldChannel.requestMethod;
+    },
+    
+ isInvitation: function caldav_isInvitation(aItem) {
+        if (this.mACLMgr) {
+            // Inverse inc. ACL addition
+            var entry = this.mACLMgr.calendarEntry(this.uri);
+            var org = aItem.organizer;
+      
+            if (!org) {
+                // HACK
+                // if we don't have an organizer, this is perhaps because it's an exception
+                // to a recurring event. We check the parent item.
+                if (aItem.parentItem) {
+                    org = aItem.parentItem.organizer;
+                    if (!org) return false;
+                }
+                else
+                    return false;
+            }
+      
+            // If our server does not support ACLs, we rollback to the previous method
+            // of checking if it's an invitation (code from calProviderBase.js)
+            if (!entry.hasAccessControl) {
+                var id = this.getProperty("organizerId");
+                if (id) {
+                    if (!org || (org.id.toLowerCase() == id.toLowerCase())) {
+                        return false;
+                    }
+                    return (aItem.getAttendeeById(id) != null);
+                }
+                return false;
+            }
+
+            // We check if :
+            // - the organizer of the event is NOT within the owner's identities of this calendar
+            // - if the one of the owner's identities of this calendar is in the attendees
+            if (entry.isCalendarReady()) {
+                var identity;
+                for (var i = 0; i < entry.ownerIdentities.length; i++) {
+                    identity = "mailto:" + entry.ownerIdentities[i].email.toLowerCase();
+                    if (org.id.toLowerCase() == identity)
+                        return false;
+                    
+                    if (aItem.getAttendeeById(identity) != null)
+                        return true;
+                }
+            }
+            
+            return false;
+        } else {
+            // No ACL support - fallback to the old mehtod
+            var id = this.getProperty("organizerId");
+            if (id) {
+                var org = aItem.organizer;
+                if (!org || (org.id.toLowerCase() == id.toLowerCase())) {
+                    return false;
+                }
+                return (aItem.getAttendeeById(id) != null);
+            }
+            return false;
+        }
+    },
+
+    getInvitedAttendee: function caldav_getInvitedAttendee(aItem) {
+      var id = this.getProperty("organizerId");
+      var attendee = (id ? aItem.getAttendeeById(id) : null);
+
+      if (!attendee && this.mACLMgr) {
+          var entry = this.mACLMgr.calendarEntry(this.uri);
+          
+          if (entry.isCalendarReady()) {
+              var identity;
+              for (var i = 0; !attendee && i < entry.ownerIdentities.length; i++) {
+                  identity = "mailto:" + entry.ownerIdentities[i].email.toLowerCase();
+                  attendee = aItem.getAttendeeById(identity);
+              }
+          }
+      }
+
+      return attendee;
+    },
+
+     observe: function(aSubject, aTopic, aData) {
+        // Inverse inc. ACL addition
+        if (this.uri.spec == aData) {
+            this.mHasACLLoaded = true;
+            if (aTopic == "caldav-acl-loaded") {
+                var entry = this.mACLMgr.calendarEntry(this.uri);
+                if (!entry.hasAccessControl) {
+                    LOG("[caldav] server has no access control\n");
+                    this.readOnly = false;
+                }
+            } else if (aTopic == "caldav-acl-reset") {
+                /* An error occured during the refresh of ACL. Since it may be
+                   due to the lack of support for ACLS, we go on with the
+                   refresh.*/
+                LOG("[caldav] calendar " + this.id + " '"
+                    + this.calendarUri.spec
+                    + "' does not support ACL (or server failure occured)");
+            }
+            if (this.mACLRefreshData) {
+                LOG("[caldav] calendar " + this.id + ": proceed with refresh");
+                this.safeRefresh(this.mACLRefreshData.changeLogListener);
+                delete this.mACLRefreshData;
+            }
+        }
+    },
+      reenable: function caldav_reenable(aChangeLogListener) {
+      // we reset our calendar status
+      this.setProperty("currentStatus", Components.results.NS_OK);
+      this.readOnly = false;
+      this.disabled = false;
+      
+      // check if maybe our calendar has become available
+      this.checkDavResourceType(aChangeLogListener);
+      
+      // try to reread the ACLs
+      if (this.mACLMgr) {
+          this.mACLMgr.refresh(this.uri);
+      }
     }
+
+
 };
+
 
 function calDavObserver(aCalendar) {
     this.mCalendar = aCalendar;

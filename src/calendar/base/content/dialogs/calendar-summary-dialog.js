@@ -76,15 +76,40 @@ function onLoad() {
             return item;
         }
     }
-
-    // set the dialog-id to enable the right window-icon to be loaded.
-    if (cal.isEvent(item)) {
-        setDialogId(document.documentElement, "calendar-event-summary-dialog");
-    } else if (cal.isToDo(item)) {
-        setDialogId(document.documentElement, "calendar-task-summary-dialog");
+// INVERSE - BEGIN
+    //window.readOnly = calendar.readOnly;
+    window.readOnly = true;
+    if (isCalendarWritable(calendar)) {
+        window.readOnly = false;
+    } else {
+        var aclMgr;
+        try {
+            aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.nsISupports)
+                               .wrappedJSObject;
+        } catch(e) {
+            aclMgr = null;
+        }
+        if (calendar.type == "caldav" && aclMgr) {
+            var realCalendar = calendar.getProperty("cache.uncachedCalendar");
+            if (!realCalendar) {
+                realCalendar = calendar;
+            }
+            realCalendar = realCalendar.wrappedJSObject;
+            var cache = realCalendar.mItemInfoCache;
+            if (cache[item.id]) {
+                /* We don't need to setup an observer here as we know the
+                   entry was initialized from calendar-item-editing.js */
+                var compEntry = aclMgr.componentEntry(calendar.uri,
+                                                      cache[item.id].locationPath);
+                if (compEntry && compEntry.isComponentReady()) {
+                    window.readOnly = !(compEntry.userCanModify()
+                                        || compEntry.userCanRespond());
+                }
+            }
+        }
     }
-
-    window.readOnly = calendar.readOnly;
+    // INVERSE - END
     if (!window.readOnly && calInstanceOf(calendar, Components.interfaces.calISchedulingSupport)) {
         var attendee = calendar.getInvitedAttendee(item);
         if (attendee) {

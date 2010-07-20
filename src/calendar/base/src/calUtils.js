@@ -41,6 +41,22 @@
  * various components (and other js scopes) don't need to replicate them. Note
  * that loading this file twice in the same scope will throw errors.
  */
+function backtrace(aDepth) {
+    let depth = aDepth || 10;
+    let stack = "";
+    let frame = arguments.callee.caller;
+
+    for (let i = 1; i <= depth; i++) {
+        stack += i+": "+ frame.name + "\n";
+        frame = frame.caller;
+        if (!frame){
+            break;
+        }
+    }
+
+    return stack;
+}
+
 
 /**
  * Returns a clean new calIEvent
@@ -282,12 +298,35 @@ function getCalendarDirectory() {
  * @param aCalendar     The calendar to check
  * @return              True if the calendar is writable
  */
-function isCalendarWritable(aCalendar) {
+/* Temporarily moved, Should be replaced by hooks */
+function isCalendarWritable(aCalendar) {	
+    // INVERSE - BEGIN
+    if (aCalendar.type == "caldav") {
+        var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                     .getService(Components.interfaces.nsISupports)
+                     .wrappedJSObject;
+        var entry = aclMgr.calendarEntry(aCalendar.uri);
+        if (entry.isCalendarReady()) {
+            return (!aCalendar.getProperty("disabled") &&
+                    !aCalendar.readOnly &&
+                    (entry.userIsOwner() || entry.userCanAddComponents()) &&
+                    (!getIOService().offline ||
+                     aCalendar.getProperty("requiresNetwork") === false));
+        }
+    }
+    // INVERSE- END
+
     return (!aCalendar.getProperty("disabled") &&
             !aCalendar.readOnly &&
             (!getIOService().offline ||
              aCalendar.getProperty("requiresNetwork") === false));
 }
+/*function isCalendarWritable(aCalendar) {dump("\nyes2\n"+backtrace());
+    return (!aCalendar.getProperty("disabled") &&
+            !aCalendar.readOnly &&
+            (!getIOService().offline ||
+             aCalendar.getProperty("requiresNetwork") === false));
+}*/
 
 /**
  * Opens the Create Calendar wizard

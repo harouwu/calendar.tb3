@@ -389,3 +389,8 @@
 <!ENTITY read.only.description.label     "Description">
 <!ENTITY read.only.documents.label       "Documents">
 <!ENTITY read.only.link.label            "Related Link">
+
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
+
+<!ENTITY event.showtimeasfree.label                          "Show Time as Free" >

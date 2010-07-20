@@ -134,16 +134,28 @@
           <separator id="item-main-separator" flex="1" class="groove" hidden="true"/>
           <row id="invitation-row" hidden="true" align="center">
             <label value="&read.only.reply.label;" control="item-participation"/>
-            <hbox pack="start">
+            <vbox pack="start">
               <menulist id="item-participation" oncommand="updateInvitation()">
                 <menupopup>
                   <menuitem label="&read.only.accept.label;" value="ACCEPTED"/>
                   <menuitem label="&read.only.tentative.label;" value="TENTATIVE"/>
                   <menuitem label="&read.only.decline.label;" value="DECLINED"/>
                   <menuitem label="&read.only.needs.action.label;" value="NEEDS-ACTION"/>
+                  <menuitem label="&read.only.delegate.label;" value="DELEGATED"/>
                 </menupopup>
               </menulist>
-            </hbox>
+              <textbox id="item-delegate"
+                collapsed="true"
+                type="autocomplete" flex="1" searchSessions="addrbook"
+                autofill="true" autoFill="true"
+                autofillaftermatch="true" autoFillAfterMatch="true"
+                forcecomplete="true" forceComplete="true"
+                minresultsforpopup="1" minResultsForPopup="true"
+                ignoreblurwhilesearching="true" ignoreBlurWhileSearching="true"
+                />
+              <!-- checkbox disabled="true" id="item-delegate-staytuned"
+                label="&read.only.keep-delegator-updated.label;" -->
+            </vbox>
           </row>
           <row id="reminder-row" hidden="true" align="center">
             <label value="&read.only.reminder.label;" control="item-alarm"/>

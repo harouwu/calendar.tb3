@@ -422,7 +422,6 @@ function loadDialog(item) {
     updateDateTime();
 
     updateCalendar();
-
     // figure out what the title of the dialog should be and set it
     updateTitle();
 
@@ -816,7 +815,7 @@ function updateReminder() {
  * @param item    The item to save to.
  */
 function saveDialog(item) {
-    // Calendar
+    // Calendar   
     item.calendar = getCurrentCalendar();
 
     setItemProperty(item, "title", getElementValue("item-title"));
@@ -1827,16 +1826,14 @@ function attachmentLinkClicked(event) {
  */
 function updateCalendar() {
     let item = window.calendarItem;
-    let calendar = getCurrentCalendar();
-
+    let calendar = document.getElementById("item-calendar")
+                           .selectedItem.calendar;
     gIsReadOnly = calendar.readOnly;
-
-    if (!canNotifyAttendees(calendar, item) && calendar.getProperty("imip.identity")) {
-        enableElement("notify-attendees-checkbox");
-    } else {
-        disableElement("notify-attendees-checkbox");
+ // We might have to change the organizer, let's see
+    if (window.organizer) {
+      window.organizer.id = calendar.getProperty("organizerId");
+      window.organizer.commonName = calendar.getProperty("organizerCN");
     }
-
     // update the accept button
     updateAccept();
 
@@ -1874,7 +1871,6 @@ function updateCalendar() {
                 enableElements[i].setAttribute('class', 'text-link');
             }
         }
-
         var collapseElements = document.getElementsByAttribute("collapse-on-readonly", "true");
         for (var i = 0; i < collapseElements.length; i++) {
             collapseElements[i].removeAttribute('collapsed');
@@ -1909,7 +1905,6 @@ function updateCalendar() {
             // don't allow to revoke the entrydate of recurring todo's.
             disableElementWithLock("todo-has-entrydate", "permanent-lock");
         }
-
         // update datetime pickers
         updateDueDate();
         updateEntryDate();
@@ -1917,7 +1912,6 @@ function updateCalendar() {
         // update datetime pickers
         updateAllDay();
     }
-
     // Make sure capabilties are reflected correctly
     updateCapabilities();
 }
@@ -2173,7 +2167,7 @@ function saveItem() {
     // it is important to not apply the changes to the original item
     // (even if it happens to be mutable) in order to guarantee
     // that providers see a proper oldItem/newItem pair in case
-    // they rely on this fact (e.g. WCAP does).
+    // they rely on this fact (e.g. WCAP does).     
     var originalItem = window.calendarItem;
     var item = originalItem.clone();
 
@@ -2185,7 +2179,9 @@ function saveItem() {
     // serialize the item
     saveDialog(item);
 
-    item.organizer = window.organizer;
+    if (!window.isOccurrence) {
+        item.organizer = window.organizer;
+    }
 
     item.removeAllAttendees();
     if (window.attendees && (window.attendees.length > 0)) {
@@ -2200,7 +2196,37 @@ function saveItem() {
             item.setProperty("X-MOZ-SEND-INVITATIONS", notifyCheckbox.checked ? "TRUE" : "FALSE");
         }
     }
-
+// For CalDAV calendars, we check if the organizerID is different from our
+    // calendar-user-address-set. The organzerID is the owner of the calendar.
+    // If it's different, that is because someone is acting on behalf of
+    // the organizer.
+    if (item.calendar.type == "caldav" && item.organizer) {
+      // Inverse inc. ACL addition
+      try {
+	var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+	  .getService(Components.interfaces.nsISupports)
+	  .wrappedJSObject;
+	
+	var entry = aclMgr.calendarEntry(item.calendar.uri);		
+	var found = false;
+	var identity;
+	
+	for (var i = 0; i < entry.userAddresses.length; i++) {
+	  identity = entry.userAddresses[i].toLowerCase();
+	  if (item.organizer.id.toLowerCase() == identity) {
+	    found = true;
+	  }
+	}
+	
+	if (!found && entry.userAddresses.length > 0) {
+	  var organizer = item.organizer.clone();
+	  organizer.setProperty("SENT-BY", entry.userAddresses[0]);
+	  item.organizer = organizer;
+	}
+      } catch (ex) {
+	// No ACL support
+      }
+    }
     return item;
 }
 

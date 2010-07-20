@@ -51,6 +51,7 @@ var TodayPane = {
      * Load Handler, sets up the today pane controls.
      */
     onLoad: function onLoad() {
+    document.getElementById("todaypane-new-event-button").removeAttribute("disabled");
         TodayPane.paneViews = [ cal.calGetString("calendar", "eventsandtasks"),
                                 cal.calGetString("calendar", "tasksonly"),
                                 cal.calGetString("calendar", "eventsonly") ];

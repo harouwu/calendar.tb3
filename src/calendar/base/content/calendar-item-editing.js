@@ -38,6 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://calendar/modules/calAlarmUtils.jsm");
+Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 /**
  * Creates an event with the calendar event dialog.
@@ -50,6 +51,22 @@ Components.utils.import("resource://calendar/modules/calAlarmUtils.jsm");
  * @param aForceAllDay  (optional) Make sure the event shown in the dialog is an
  *                                   allday event.
  */
+function backtrace(aDepth) {
+    let depth = aDepth || 10;
+    let stack = "";
+    let frame = arguments.callee.caller;
+
+    for (let i = 1; i <= depth; i++) {
+        stack += i+": "+ frame.name + "\n";
+        frame = frame.caller;
+        if (!frame){
+            break;
+        }
+    }
+
+    return stack;
+}
+
 function createEventWithDialog(calendar, startDate, endDate, summary, event, aForceAllday) {
     const kDefaultTimezone = calendarDefaultTimezone();
 
@@ -138,6 +155,7 @@ function createEventWithDialog(calendar, startDate, endDate, summary, event, aFo
 
         cal.alarms.setDefaultValues(event);
     }
+	
     openEventDialog(event, calendar, "new", onNewEvent, null);
 }
 
@@ -239,13 +257,88 @@ function modifyEventWithDialog(aItem, job, aPromptOccurrence, initialDate) {
  * @param job               (optional) The job object for the modification.
  * @param initialDate       (optional) The initial date for new task datepickers  
  */
-function openEventDialog(calendarItem, calendar, mode, callback, job, initialDate) {
+ function itemObserver(componentURL, openArgs) {
+    this.componentURL = componentURL;
+    this.openArgs = openArgs;
+}
+
+itemObserver.prototype = {
+    observe: function(aSubject, aTopic, aData) {
+        if (aData) {
+            var parts = aData.split("/");
+            if (this.componentURL == parts[parts.length-1]) {
+                var obsService = Components.classes["@mozilla.org/observer-service;1"]
+                                           .getService(Components.interfaces.nsIObserverService);
+                obsService.removeObserver(this,
+                                          "caldav-component-acl-loaded", false);
+                obsService.removeObserver(this,
+                                          "caldav-component-acl-reset", false);
+                openEventDialog.apply(window, this.openArgs);
+            }
+        }
+    }
+};
+
+function loadItemCalDAVAclEntry(aclMgr, item, calendar, openArgs) {
+    var realCalendar = calendar.getProperty("cache.uncachedCalendar");
+    if (!realCalendar) {
+        realCalendar = calendar;
+    }
+    realCalendar = realCalendar.wrappedJSObject;
+    var cache = realCalendar.mItemInfoCache;
+    var compEntry = null;
+    if (cache[item.id]) {
+        var compURL = cache[item.id].locationPath;
+        var obsService = Components.classes["@mozilla.org/observer-service;1"]
+                                   .getService(Components.interfaces.nsIObserverService);
+        var obs = new itemObserver(compURL, openArgs);
+        obsService.addObserver(obs, "caldav-component-acl-loaded", false);
+        obsService.addObserver(obs, "caldav-component-acl-reset", false);
+        compEntry = aclMgr.componentEntry(calendar.uri, compURL);
+        if (compEntry.isComponentReady()) {
+            obsService.removeObserver(obs, "caldav-component-acl-loaded", false);
+            obsService.removeObserver(obs, "caldav-component-acl-reset", false);
+        } else {
+            compEntry = null;
+        }
+    }
+
+    return compEntry;
+}
+
+/* hackich: this is the old implementation of isCalendarWritable, without the
+   ACL code */
+function isCalendarAvailable(aCalendar) {
+    return (!aCalendar.getProperty("disabled") &&
+            !aCalendar.readOnly &&
+            (!getIOService().offline ||
+             aCalendar.getProperty("requiresNetwork") === false));
+}
+
+function openEventDialog(calendarItem, calendar, mode, callback, job) {
     // Set up some defaults
     mode = mode || "new";
+    var compAclEntry = null;
+
+    try {
+        var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.nsISupports)
+                               .wrappedJSObject;
+        if (mode == "modify" && calendar.type == "caldav"
+            && isCalendarAvailable(calendar)) {
+            compAclEntry = loadItemCalDAVAclEntry(aclMgr, calendarItem,
+                                                  calendar, arguments);
+            if (!compAclEntry) {
+                return;
+            }
+        }
+    }
+    catch(e) {}
+
     calendar = calendar || getSelectedCalendar();
     var calendars = getCalendarManager().getCalendars({});
     calendars = calendars.filter(isCalendarWritable);
-
+	//alert(calendars.length);
     var isItemSupported;
     if (isToDo(calendarItem)) {
         isItemSupported = function isTodoSupported(cal) {
@@ -284,18 +377,14 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
     args.mode = mode;
     args.onOk = callback;
     args.job = job;
-    args.initialStartDateValue = (initialDate || getDefaultStartDate());
 
     // this will be called if file->new has been selected from within the dialog
     args.onNewEvent = function(calendar) {
         createEventWithDialog(calendar, null, null);
-    };
-    args.onNewTodo = function(calendar) {
-        createTodoWithDialog(calendar);
-    };
+    }
 
     // the dialog will reset this to auto when it is done loading.
-    window.setCursor("wait");
+    //window.setCursor("wait");
 
     // ask the provide if this item is an invitation. if this is the case
     // we'll open the summary dialog since the user is not allowed to change
@@ -303,13 +392,20 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
     var isInvitation = false;
     if (calInstanceOf(calendar, Components.interfaces.calISchedulingSupport)) {
         isInvitation = calendar.isInvitation(calendarItem);
-    }
-
+    } 
     // open the dialog modeless
-    var url = "chrome://calendar/content/calendar-event-dialog.xul";
-    if ((mode != "new" && isInvitation) || !isCalendarWritable(calendar)) {
+    var url;
+    if (isCalendarAvailable(calendar)
+      //  && isCalendarWritable(calendar)
+        && (mode == "new"
+            || (mode == "modify"
+                && !isInvitation
+                && (!compAclEntry || compAclEntry.userCanModify())))) {
+        url = "chrome://calendar/content/calendar-event-dialog.xul";
+    } else {
         url = "chrome://calendar/content/calendar-summary-dialog.xul";
     }
+	
     openDialog(url, "_blank", "chrome,titlebar,resizable", args);
 }
 
