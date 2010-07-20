@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 # Variables
 BASE="`pwd`"
@@ -105,6 +105,7 @@ function build {
     cd $BASE/src/calendar/locales/
     for lang in "en-US" `cat shipped-locales`
     do
+        cd $BASE/src/calendar/locales/
         if [ -d $lang ];
         then
             echo "Generating locale $lang...";
@@ -114,16 +115,21 @@ function build {
                 cp -a $lang/chrome/$package $BASE/tmp/chrome/locale/$lang/$package;
             done;
             cd $BASE/tmp/chrome;
-            mv -f locale/$lang/calendar/providers/wcap/wcap.properties locale/$lang/calendar/;
-            rm -rf locale/$lang/calendar/providers;
-            mv -f locale/$lang/calendar/timezones.properties locale/$lang/lightning/timezones.properties;
+            if [ -f locale/$lang/calendar/providers/wcap/wcap.properties ];
+            then
+                mv -f locale/$lang/calendar/providers/wcap/wcap.properties locale/$lang/calendar/;
+                rm -rf locale/$lang/calendar/providers;
+            fi;
+            if [ -f locale/$lang/calendar/timezones.properties ];
+            then
+                mv -f locale/$lang/calendar/timezones.properties locale/$lang/lightning/timezones.properties;
+            fi;
             rm -f $package-$lang.jar;
             for package in calendar lightning;
             do
                 zip -9r $package-$lang.jar locale/$lang/$package;
             done;
             rm -rf locale;
-            cd $BASE/src/calendar/locales/
         fi
     done
 
