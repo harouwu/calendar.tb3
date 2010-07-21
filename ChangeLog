@@ -1,0 +1,6 @@
+2010-07-21  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/caldav/calDavCalendar.js: (getProperty):
+	fixed a crash by returning the first owner's identity rather than
+	a copy of it when "imip.identity" is queried.
+

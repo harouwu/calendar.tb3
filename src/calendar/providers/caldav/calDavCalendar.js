@@ -436,19 +436,13 @@ calDavCalendar.prototype = {
                 break;
 
             case "imip.identity":
-                var entry = this.mACLMgr.calendarEntry(this.uri);
-                if (entry.isCalendarReady() && entry.ownerIdentities) {
-                    var displayName = entry.ownerIdentities[0].fullName;
-                    var email = entry.ownerIdentities[0].email;
-                    var newIdentity = Components.classes["@mozilla.org/messenger/identity;1"]
-                                      .createInstance(Components.interfaces.nsIMsgIdentity);
-                    newIdentity.identityName = String(displayName + " <" + email + ">");
-                    newIdentity.fullName = String(displayName);
-                    newIdentity.email = String(email);
-                    return newIdentity; 
+                let entry = this.mACLMgr.calendarEntry(this.uri);
+                if (entry.isCalendarReady()
+                    && entry.ownerIdentities
+                    && entry.ownerIdentities.length > 0) {
+                    return entry.ownerIdentities[0];
                 }
                 break;
-                 
             }
         } else {
             switch (aName) {
