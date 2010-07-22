@@ -1,5 +1,8 @@
 2010-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/lightning/content/lightning-calendar-properties.js
+	(onLoad): added ACL code.
+
 	* src/calendar/base/src/calUtils.js: (isCalendarWritable) added
 	code that makes use of the CalDAV ACL mgr...
 
