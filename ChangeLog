@@ -3,6 +3,8 @@
 	* src/calendar/base/content/dialogs/calendar-event-dialog.js:
 	(updateCalendar): added code to load the acl entry for the
 	calendar item being editted, from sogo-connector acl code.
+	(saveItem): check whether the item is its own parent in order to
+	decide whether to set the item's organizer or not.
 
 	* src/calendar/base/content/calendar-ui-utils.js:
 	(appendCalendarItems) added code to check whether the list of

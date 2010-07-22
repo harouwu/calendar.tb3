@@ -2208,7 +2208,7 @@ function saveItem() {
     // serialize the item
     saveDialog(item);
 
-    if (!window.isOccurrence) {
+    if (originalItem.parentItem == originalItem) {
         item.organizer = window.organizer;
     }
 
