@@ -1,3 +1,8 @@
+2010-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/acl/caldav-acl-manager/CalDAVACLManager.js:
+	migrated from sogo-connector.
+
 2010-07-21  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/providers/caldav/calDavCalendar.js: (getProperty):

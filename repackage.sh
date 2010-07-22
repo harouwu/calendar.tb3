@@ -94,11 +94,14 @@ function build {
     # We update the JavaScript core files
     cp -f src/calendar/base/src/*.js tmp/calendar-js/
     cp -f src/calendar/providers/composite/*.js tmp/components/
+    cp -f src/calendar/acl/caldav-acl-manager/*.js tmp/calendar-js/
     cp -f src/calendar/providers/caldav/*.js tmp/calendar-js/
     cp -f src/calendar/providers/storage/*.js tmp/calendar-js/
     cp -f src/calendar/providers/storage/*.jsm tmp/modules/
+    mv -f tmp/calendar-js/*ACLManagerModule.js tmp/components/
     mv -f tmp/calendar-js/*CalendarModule.js tmp/components/
     mv -f tmp/calendar-js/calItemModule.js tmp/components/
+    echo "CalDAVACLManagerModule.js" >> tmp/components/components.list
     rm -f tmp/calendar-js/calApplicationUtils.js
 
     # We update the locales
