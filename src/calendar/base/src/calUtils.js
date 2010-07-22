@@ -41,22 +41,6 @@
  * various components (and other js scopes) don't need to replicate them. Note
  * that loading this file twice in the same scope will throw errors.
  */
-function backtrace(aDepth) {
-    let depth = aDepth || 10;
-    let stack = "";
-    let frame = arguments.callee.caller;
-
-    for (let i = 1; i <= depth; i++) {
-        stack += i+": "+ frame.name + "\n";
-        frame = frame.caller;
-        if (!frame){
-            break;
-        }
-    }
-
-    return stack;
-}
-
 
 /**
  * Returns a clean new calIEvent
@@ -142,7 +126,7 @@ function createRelation() {
     return Components.classes["@mozilla.org/calendar/relation;1"].
            createInstance(Components.interfaces.calIRelation);
 }
- 
+
 /* Shortcut to the console service */
 function getConsoleService() {
     return Components.classes["@mozilla.org/consoleservice;1"]
@@ -298,14 +282,13 @@ function getCalendarDirectory() {
  * @param aCalendar     The calendar to check
  * @return              True if the calendar is writable
  */
-/* Temporarily moved, Should be replaced by hooks */
-function isCalendarWritable(aCalendar) {	
-    // INVERSE - BEGIN
+function isCalendarWritable(aCalendar) {
+    /* ACL code */
     if (aCalendar.type == "caldav") {
-        var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                     .getService(Components.interfaces.nsISupports)
-                     .wrappedJSObject;
-        var entry = aclMgr.calendarEntry(aCalendar.uri);
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.nsISupports)
+                               .wrappedJSObject;
+        let entry = aclMgr.calendarEntry(aCalendar.uri);
         if (entry.isCalendarReady()) {
             return (!aCalendar.getProperty("disabled") &&
                     !aCalendar.readOnly &&
@@ -314,19 +297,12 @@ function isCalendarWritable(aCalendar) {
                      aCalendar.getProperty("requiresNetwork") === false));
         }
     }
-    // INVERSE- END
 
     return (!aCalendar.getProperty("disabled") &&
             !aCalendar.readOnly &&
             (!getIOService().offline ||
              aCalendar.getProperty("requiresNetwork") === false));
 }
-/*function isCalendarWritable(aCalendar) {dump("\nyes2\n"+backtrace());
-    return (!aCalendar.getProperty("disabled") &&
-            !aCalendar.readOnly &&
-            (!getIOService().offline ||
-             aCalendar.getProperty("requiresNetwork") === false));
-}*/
 
 /**
  * Opens the Create Calendar wizard
@@ -1704,7 +1680,7 @@ calPropertyBag.prototype = {
     },
     getProperty: function cpb_getProperty(aName) {
         // avoid strict undefined property warning
-        return (aName in this.mData ? this.mData[aName] : null);      
+        return (aName in this.mData ? this.mData[aName] : null);
     },
     getAllProperties: function cpb_getAllProperties(aOutKeys, aOutValues) {
         var keys = [];

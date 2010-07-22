@@ -1,5 +1,8 @@
 2010-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/base/src/calUtils.js: (isCalendarWritable) added
+	code that makes use of the CalDAV ACL mgr...
+
 	* src/calendar/base/content/dialogs/calendar-event-dialog.js:
 	(updateCalendar): added code to load the acl entry for the
 	calendar item being editted, from sogo-connector acl code.
