@@ -1,5 +1,11 @@
 2010-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/base/content/calendar-common-sets.js,
+	src/calendar/base/content/calendar-unifinder.js,
+	src/calendar/base/content/widgets/calendar-list-tree.xml: migrated
+	ACL code from SOGo Connector for handling the "calendar_new_XXX"
+	and "calendar_delete_XXX" UI commands.
+
 	* src/calendar/lightning/content/lightning-calendar-properties.js
 	(onLoad): added ACL code.
 

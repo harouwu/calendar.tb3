@@ -34,6 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/* ACL code */
+var SCEnableDelete = false;
+var SCEnableNewItems = true;
+/* /ACL code */
+
 /**
  * Command controller to execute calendar specific commands
  * @see nsICommandController
@@ -120,19 +125,19 @@ var calendarController = {
         switch (aCommand) {
             case "calendar_new_event_command":
             case "calendar_new_event_context_command":
-                return this.writable && this.calendars_support_events;
+                return SCEnableNewItems && this.writable && this.calendars_support_events;
             case "calendar_modify_focused_item_command":
                 return this.item_selected;
             case "calendar_modify_event_command":
                 return this.item_selected;
             case "calendar_delete_focused_item_command":
-                return this.selected_items_writable;
+                return SCEnableDelete && this.selected_items_writable;
             case "calendar_delete_event_command":
-                return this.selected_items_writable;
+                return SCEnableDelete && this.selected_items_writable;
             case "calendar_new_todo_command":
             case "calendar_new_todo_context_command":
             case "calendar_new_todo_todaypane_command":
-                return this.writable && this.calendars_support_tasks;
+                return SCEnableNewItems && this.writable && this.calendars_support_tasks;
             case "calendar_modify_todo_command":
             case "calendar_modify_todo_todaypane_command":
                  return this.todo_items_selected;
@@ -144,6 +149,8 @@ var calendarController = {
             case "calendar_task_filter_command":
                 return true;
             case "calendar_delete_todo_command":
+                if (!SCEnableDelete)
+                    return false;
             case "calendar_toggle_completed_command":
             case "calendar_percentComplete-0_command":
             case "calendar_percentComplete-25_command":
@@ -399,6 +406,11 @@ var calendarController = {
 
     onSelectionChanged: function cC_onSelectionChanged(aEvent) {
         var selectedItems = aEvent.detail;
+
+        /* ACL code */
+        SCComputeEnableDelete(selectedItems);
+        /* /ACL code */
+
         calendarController.item_selected = selectedItems && (selectedItems.length > 0);
 
         var selLength = (selectedItems === undefined ? 0 : selectedItems.length);
@@ -776,3 +788,73 @@ function minimonthPick(aNewDate) {
       currentView().goToDay(cdt);
   }
 }
+
+/* ACL code */
+function SCComputeEnableNewItems() {
+    dump("SCComputeEnableNewItems\n");
+    let oldValue = SCEnableNewItems;
+
+    SCEnableNewItems = false;
+    let cal = getSelectedCalendar();
+    if (cal) {
+        if (cal.type == "caldav") {
+            //         dump("cal: " + cal.name + "\n");
+            if (cal.readOnly)
+                SCEnableNewItems = false;
+            else {
+                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                       .getService(Components.interfaces.nsISupports)
+                                       .wrappedJSObject;
+                let calEntry = aclMgr.calendarEntry(cal.uri);
+                SCEnableNewItems = (calEntry.isCalendarReady()
+                                    && calEntry.userCanAddComponents());
+            }
+        } else {
+            SCEnableNewItems = !cal.readOnly;
+        }
+    }
+
+    //     dump("enable new items: " + SCEnableNewItems + "\n");
+    //     dump("  url: " + cal.uri.spec + "\n");
+    if (SCEnableNewItems != oldValue) {
+        let commands = ["calendar_new_event_command",
+                        "calendar_new_event_context_command",
+                        "calendar_new_todo_command",
+                        "calendar_new_todo_context_command",
+                        "calendar_new_todo_todaypane_command"];
+        for (let i = 0; i < commands.length; i++) {
+            goUpdateCommand(commands[i]);
+        }
+    }
+}
+
+function SCComputeEnableDelete(selectedItems) {
+    let firstState = SCEnableDelete;
+    SCEnableDelete = (selectedItems.length > 0);
+
+    let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                           .getService(Components.interfaces.nsISupports)
+                           .wrappedJSObject;
+
+    for (let i = 0; i < selectedItems.length; i++) {
+        let calendar = selectedItems[i].calendar;
+        if (calendar.type == "caldav") {
+            let calEntry = aclMgr.calendarEntry(calendar.uri);
+            SCEnableDelete = (calEntry.isCalendarReady()
+                              && calEntry.userCanDeleteComponents());
+        }
+    }
+
+    if (SCEnableDelete != firstState) {
+        let commands = ["calendar_delete_event_command",
+                        "calendar_delete_todo_command",
+                        "calendar_delete_focused_item_command",
+                        "button_delete",
+                        "cmd_delete"];
+        for (let i = 0; i < commands.length; i++) {
+            goUpdateCommand(commands[i]);
+        }
+    }
+}
+
+/* /ACL code */

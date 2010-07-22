@@ -1049,6 +1049,9 @@
     <handlers>
       <handler event="select"><![CDATA[
         this.compositeCalendar.defaultCalendar = this.getCalendar(this.tree.currentIndex);
+        /* ACL code */
+        SCComputeEnableNewItems();
+        /* /ACL code */
       ]]></handler>
       <handler event="keypress" keycode="VK_DELETE"><![CDATA[
         if (this.writable) {
