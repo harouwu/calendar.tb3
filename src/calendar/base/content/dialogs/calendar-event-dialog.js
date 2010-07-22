@@ -59,6 +59,8 @@ var gLastRepeatSelection = 0;
 var gIgnoreUpdate = false;
 var gShowTimeAs = null;
 
+var gComponentACLEntry = null;
+
 /**
  * Checks if the given calendar supports notifying attendees. The item is needed
  * since calendars may support notifications for only some types of items.
@@ -815,7 +817,7 @@ function updateReminder() {
  * @param item    The item to save to.
  */
 function saveDialog(item) {
-    // Calendar   
+    // Calendar
     item.calendar = getCurrentCalendar();
 
     setItemProperty(item, "title", getElementValue("item-title"));
@@ -1914,6 +1916,33 @@ function updateCalendar() {
     }
     // Make sure capabilties are reflected correctly
     updateCapabilities();
+
+    /* ACL code */
+    if (calendar.type == "caldav") {
+        let wrappedCalendar = calendar.wrappedJSObject;
+        let mgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                            .getService(Components.interfaces.nsISupports)
+                            .wrappedJSObject;
+
+        let componentURL = null;
+        if (item.id) {
+            let cache = calendar.mItemInfoCache;
+            if (!cache)
+                cache = calendar.mUncachedCalendar.wrappedJSObject.mItemInfoCache;
+            if (cache) {
+                if (cache[item.id]) {
+                    componentURL = cache[item.id].locationPath;
+                    //                     dump("componentURL: " + componentURL + "\n");
+                }
+            }
+            else {
+                dump("no cache found\n");
+            }
+        }
+
+        gComponentACLEntry = mgr.componentEntry(calendar.uri, componentURL);
+    }
+    /* /ACL Code */
 }
 
 /**
@@ -2125,7 +2154,7 @@ function updateToDoStatus(status, passedInCompletedDate) {
           enableElement("percent-complete-textbox");
           enableElement("percent-complete-label");
           // if there isn't a completedDate, set it to the previous value
-          if (!completedDate) { 
+          if (!completedDate) {
               completedDate = oldCompletedDate;
           }
           break;
@@ -2167,7 +2196,7 @@ function saveItem() {
     // it is important to not apply the changes to the original item
     // (even if it happens to be mutable) in order to guarantee
     // that providers see a proper oldItem/newItem pair in case
-    // they rely on this fact (e.g. WCAP does).     
+    // they rely on this fact (e.g. WCAP does).
     var originalItem = window.calendarItem;
     var item = originalItem.clone();
 
@@ -2206,18 +2235,18 @@ function saveItem() {
 	var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
 	  .getService(Components.interfaces.nsISupports)
 	  .wrappedJSObject;
-	
-	var entry = aclMgr.calendarEntry(item.calendar.uri);		
+
+	var entry = aclMgr.calendarEntry(item.calendar.uri);
 	var found = false;
 	var identity;
-	
+
 	for (var i = 0; i < entry.userAddresses.length; i++) {
 	  identity = entry.userAddresses[i].toLowerCase();
 	  if (item.organizer.id.toLowerCase() == identity) {
 	    found = true;
 	  }
 	}
-	
+
 	if (!found && entry.userAddresses.length > 0) {
 	  var organizer = item.organizer.clone();
 	  organizer.setProperty("SENT-BY", entry.userAddresses[0]);
@@ -2342,7 +2371,7 @@ function onCommandDeleteItem() {
             let newItem = window.calendarItem.parentItem.clone();
             newItem.recurrenceInfo.removeOccurrenceAt(window.calendarItem.recurrenceId);
 
-            window.opener.doTransaction("modify", newItem, newItem.calendar, 
+            window.opener.doTransaction("modify", newItem, newItem.calendar,
                                         window.calendarItem.parentItem, deleteListener);
         } else {
             window.opener.doTransaction("delete", window.calendarItem, window.calendarItem.calendar,
