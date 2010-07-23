@@ -58,7 +58,7 @@ function ltnGetMsgRecipient() {
     if (!msgHdr) {
         return null;
     }
-    
+
     var identities;
     if (msgHdr.accountKey) {
         // First, check if the message has an account key. If so, we can use the
@@ -192,9 +192,9 @@ const ltnOnItipItem = {
                 itipItem.targetCalendar = compCal;
 
                 let imipBar = document.getElementById("imip-bar");
-                imipBar.setAttribute("collapsed", "false"); 
-                ////////////////////  
-                 setupIMIPCalendars(imipMethod);     
+                imipBar.setAttribute("collapsed", "false");
+                ////////////////////
+                 setupIMIPCalendars(imipMethod);
                 switch (itipItem.receivedMethod) {
                     case "REFRESH":
                         imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRefreshText"));
@@ -218,7 +218,7 @@ const ltnOnItipItem = {
                         imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUnsupportedText"));
                         cal.ERROR("Unknown iTIP method: " + itipItem.receivedMethod);
                         return;
-                }        
+                }
                 cal.itip.processItipItem(itipItem, ltnItipOptions);
             }
         }
@@ -348,7 +348,7 @@ function ltnItipOptions(itipItem, rc, actionFunc) {
         let button1 = document.getElementById("imip-button1");
         let button2 = document.getElementById("imip-button2");
         let button3 = document.getElementById("imip-button3");
-        cal.LOG("iTIP options on: " + actionFunc.method); //alert(actionFunc.method);      
+        cal.LOG("iTIP options on: " + actionFunc.method); //alert(actionFunc.method);
         switch (actionFunc.method) {
             case "REPLY":
                 // fall-thru intended
@@ -476,7 +476,7 @@ function checkAndIncludeIMIPCalendar(allCalendars, cal, aclMgr) {
                 aclMgrDone = true;
             }
         }
-        
+
         if (!aclMgrDone) {
             calIdentities = [];
             var imipIdentity = cal.getProperty["imip.identity"];
@@ -487,6 +487,23 @@ function checkAndIncludeIMIPCalendar(allCalendars, cal, aclMgr) {
         if (calIdentities.length > 0
             && recipientMatchIdentities(calIdentities)) {
             allCalendars.push(cal);
+        }
+    }
+}
+
+function setupMsgIdentities() {
+    if (!gIdentities) {
+        var acctmgr = Components.classes["@mozilla.org/messenger/account-manager;1"]
+                      .getService(Components.interfaces.nsIMsgAccountManager);
+        var msgURI = GetLoadedMessage();
+        var msgHdr = messenger.msgHdrFromURI(msgURI);
+        if (msgHdr.accountKey) {
+            // First, check if the message has an account key. If so, we can use the
+            // account identities to find the correct recipient
+            gIdentities = acctmgr.getAccount(msgHdr.accountKey).identities;
+        } else {
+            // Without an account key, we have to revert back to using the server
+            gIdentities = acctmgr.GetIdentitiesForServer(msgHdr.folder.server);
         }
     }
 }

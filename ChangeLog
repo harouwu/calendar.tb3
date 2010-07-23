@@ -1,5 +1,8 @@
 2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/lightning/content/imip-bar.js: (setupMsgIdentities)
+	added missing method.
+
 	* src/calendar/base/content/calendar-view-core.xml:
 	(calendar-editable-item.handlers.draggesture): same as below.
 
