@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label "Katılmayacağım">
 <!ENTITY read.only.tentative.label "Katılabilirim">
 <!ENTITY read.only.needs.action.label "Daha sonra onaylayacağım">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label "Uyarı:">
 <!ENTITY read.only.attendees.label "Katılımcılar">
 <!ENTITY read.only.description.label "Açıklama">

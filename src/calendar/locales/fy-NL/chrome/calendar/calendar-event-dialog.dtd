@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Ik sil net oanwêzich wêze">
 <!ENTITY read.only.tentative.label       "Ik kin mooglik dielnimme">
 <!ENTITY read.only.needs.action.label    "Ik sil letter befestigje">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Warskôging:">
 <!ENTITY read.only.attendees.label       "Dielnimmers">
 <!ENTITY read.only.description.label     "Beskriuwing">

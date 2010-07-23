@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "我不會參加">
 <!ENTITY read.only.tentative.label       "我可能會參加">
 <!ENTITY read.only.needs.action.label    "我晚點確認">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "提醒:">
 <!ENTITY read.only.attendees.label       "與會者">
 <!ENTITY read.only.description.label     "描述">

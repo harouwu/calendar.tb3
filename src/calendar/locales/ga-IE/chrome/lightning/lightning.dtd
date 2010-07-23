@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Taispeáin Pána Inniu">
 <!ENTITY todaypane.showTodayPane.accesskey "p">
 <!ENTITY todaypane.statusButton.label "Pána Inniu">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

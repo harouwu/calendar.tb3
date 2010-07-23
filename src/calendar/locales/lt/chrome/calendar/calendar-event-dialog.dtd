@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Aš nedalyvausiu">
 <!ENTITY read.only.tentative.label       "Galbūt dalyvausiu">
 <!ENTITY read.only.needs.action.label    "Apsisprendimą pranešiu vėliau">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Priminimas:">
 <!ENTITY read.only.attendees.label       "Dalyviai">
 <!ENTITY read.only.description.label     "Aprašas">

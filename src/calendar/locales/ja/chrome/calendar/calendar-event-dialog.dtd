@@ -383,6 +383,8 @@
 <!ENTITY read.only.decline.label			"参加できません">
 <!ENTITY read.only.tentative.label			"参加できると思います">
 <!ENTITY read.only.needs.action.label			"後で決定します">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label			"アラーム:">
 <!ENTITY read.only.attendees.label			"参加者">
 <!ENTITY read.only.description.label			"詳細">

@@ -385,6 +385,8 @@
 <!ENTITY read.only.decline.label         "참석 못함">
 <!ENTITY read.only.tentative.label       "참석 미정">
 <!ENTITY read.only.needs.action.label    "나중에 결정">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "알림:">
 <!ENTITY read.only.attendees.label       "참석자">
 <!ENTITY read.only.description.label     "설명">

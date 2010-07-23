@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Я не буду участвовать">
 <!ENTITY read.only.tentative.label       "Я мог бы присутствовать">
 <!ENTITY read.only.needs.action.label    "Я подтвержу позже">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Напоминание:">
 <!ENTITY read.only.attendees.label       "Участники">
 <!ENTITY read.only.description.label     "Описание">

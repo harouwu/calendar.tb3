@@ -111,3 +111,7 @@
 <!ENTITY todaypane.showTodayPane.label "Sýn dagsins í dag">
 <!ENTITY todaypane.showTodayPane.accesskey "d">
 <!ENTITY todaypane.statusButton.label "Dagurinn í dag">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Jeg deltar ikke">
 <!ENTITY read.only.tentative.label       "Jeg deltar kanskje">
 <!ENTITY read.only.needs.action.label    "Jeg beslutter senere">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Påminnelse:">
 <!ENTITY read.only.attendees.label       "Deltakere">
 <!ENTITY read.only.description.label     "Beskrivelse">

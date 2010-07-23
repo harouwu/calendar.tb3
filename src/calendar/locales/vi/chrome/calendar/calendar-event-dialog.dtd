@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Tôi sẽ không tham dự">
 <!ENTITY read.only.tentative.label       "Có thể tôi sẽ tham dự">
 <!ENTITY read.only.needs.action.label    "Tôi sẽ xác nhận sau">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Nhắc việc:">
 <!ENTITY read.only.attendees.label       "Khách tham dự">
 <!ENTITY read.only.description.label     "Mô tả">

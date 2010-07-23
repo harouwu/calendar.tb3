@@ -380,6 +380,8 @@
 <!ENTITY read.only.decline.label         "මම නොපැමිණෙමි">
 <!ENTITY read.only.tentative.label       "මම සමහරවිට පැමිණේවි">
 <!ENTITY read.only.needs.action.label    "මම පසුව තහවුරු කරමි">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "සිහිකැඳවීම:">
 <!ENTITY read.only.attendees.label       "පැමිණෙන්නන්">
 <!ENTITY read.only.description.label     "විස්තරය">

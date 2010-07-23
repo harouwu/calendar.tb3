@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label "Ez dut parte hartuko.">
 <!ENTITY read.only.tentative.label "Saiatuko naiz parte hartzen.">
 <!ENTITY read.only.needs.action.label "Beranduago baieztatuko dut.">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label "Gogoratu:">
 <!ENTITY read.only.attendees.label "Partaideak">
 <!ENTITY read.only.description.label "Azalpena">

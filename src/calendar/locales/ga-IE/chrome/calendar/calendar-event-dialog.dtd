@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label "Ní bheidh mé i láthair">
 <!ENTITY read.only.tentative.label "Seans go mbeidh mé i láthair">
 <!ENTITY read.only.needs.action.label "Dearbhóidh mé níos déanaí">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label "Meabhrúchán:">
 <!ENTITY read.only.attendees.label "Rannpháirtithe">
 <!ENTITY read.only.description.label "Cur Síos">

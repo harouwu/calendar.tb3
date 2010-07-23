@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Hiện Bảng Ngày Hôm Nay">
 <!ENTITY todaypane.showTodayPane.accesskey "B">
 <!ENTITY todaypane.statusButton.label "Bảng Ngày Hôm Nay">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

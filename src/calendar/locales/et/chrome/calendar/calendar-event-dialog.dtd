@@ -381,6 +381,8 @@
 <!ENTITY read.only.decline.label         "Ei osale">
 <!ENTITY read.only.tentative.label       "Pole otsustanud">
 <!ENTITY read.only.needs.action.label    "Kinnitan hiljem">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Meeldetuletus:">
 <!ENTITY read.only.attendees.label       "Osalejad">
 <!ENTITY read.only.description.label     "Kirjeldus">

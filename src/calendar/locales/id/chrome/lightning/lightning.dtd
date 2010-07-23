@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Tampilkan Panel Hari Ini">
 <!ENTITY todaypane.showTodayPane.accesskey "i">
 <!ENTITY todaypane.statusButton.label "Panel Hari Ini">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

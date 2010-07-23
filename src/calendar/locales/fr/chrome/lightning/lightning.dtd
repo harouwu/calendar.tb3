@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Afficher le panneau « Aujourd'hui »">
 <!ENTITY todaypane.showTodayPane.accesskey "A">
 <!ENTITY todaypane.statusButton.label "Panneau « Aujourd'hui »">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choisir un délégué...">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Me tenir au courant">

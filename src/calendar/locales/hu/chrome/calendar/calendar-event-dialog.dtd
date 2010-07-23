@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Nem veszek rész">
 <!ENTITY read.only.tentative.label       "Esetleg részt veszek">
 <!ENTITY read.only.needs.action.label    "Később döntök">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Emlékeztető:">
 <!ENTITY read.only.attendees.label       "Résztvevők">
 <!ENTITY read.only.description.label     "Leírás">

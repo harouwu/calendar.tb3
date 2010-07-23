@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Ne potrjujem udeležbe">
 <!ENTITY read.only.tentative.label       "Morebiti se udeležim">
 <!ENTITY read.only.needs.action.label    "Udeležbo potrdim kasneje">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Opomnik:">
 <!ENTITY read.only.attendees.label       "Udeleženci">
 <!ENTITY read.only.description.label     "Opis">

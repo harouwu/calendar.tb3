@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Ikusi gaurko panela">
 <!ENTITY todaypane.showTodayPane.accesskey "u">
 <!ENTITY todaypane.statusButton.label "Gaurko panela">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

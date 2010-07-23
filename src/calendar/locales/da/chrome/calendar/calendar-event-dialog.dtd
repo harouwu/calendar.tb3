@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label "Jeg vil ikke deltage">
 <!ENTITY read.only.tentative.label "Jeg vil måske deltage">
 <!ENTITY read.only.needs.action.label "Jeg vil bekræfte senere">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label "Påmindelse:">
 <!ENTITY read.only.attendees.label "Deltagere">
 <!ENTITY read.only.description.label "Beskrivelse">

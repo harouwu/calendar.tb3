@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "No participaré">
 <!ENTITY read.only.tentative.label       "Podría participar">
 <!ENTITY read.only.needs.action.label    "Confirmaré después">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Recordatorio:">
 <!ENTITY read.only.attendees.label       "Participantes">
 <!ENTITY read.only.description.label     "Descripción">

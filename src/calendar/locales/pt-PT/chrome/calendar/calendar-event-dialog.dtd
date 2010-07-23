@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Não vou atender">
 <!ENTITY read.only.tentative.label       "Posso atender">
 <!ENTITY read.only.needs.action.label    "Comfirmo mais tarde">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Lembrança:">
 <!ENTITY read.only.attendees.label       "Participantes">
 <!ENTITY read.only.description.label     "Descrição">

@@ -383,6 +383,8 @@
 <!ENTITY read.only.decline.label "Nezúčastním se">
 <!ENTITY read.only.tentative.label "Možná se zúčastním">
 <!ENTITY read.only.needs.action.label "Potvrdím později">
+<!ENTITY read.only.delegate.label        "Deleguji">
+<!ENTITY read.only.keep-delegator-updated.label "Chci zůstat informovaný">
 <!ENTITY read.only.reminder.label "Připomenutí:">
 <!ENTITY read.only.attendees.label "Účastníci">
 <!ENTITY read.only.description.label "Popis">

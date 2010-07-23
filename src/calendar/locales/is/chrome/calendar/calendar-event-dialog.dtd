@@ -357,6 +357,8 @@
 <!ENTITY read.only.decline.label "Ég mæti ekki">
 <!ENTITY read.only.tentative.label "Ég mæti kannski">
 <!ENTITY read.only.needs.action.label "Ég staðfesti seinna">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label "Áminning:">
 <!ENTITY read.only.attendees.label "Þátttakendur">
 <!ENTITY read.only.description.label "Lýsing">

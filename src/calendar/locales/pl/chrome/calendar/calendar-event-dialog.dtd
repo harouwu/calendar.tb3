@@ -388,6 +388,8 @@
 <!ENTITY read.only.decline.label         "Nie będę uczestniczyć">
 <!ENTITY read.only.tentative.label       "Możliwe, że będę uczestniczyć">
 <!ENTITY read.only.needs.action.label    "Potwierdzę później">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Przypomnij:">
 <!ENTITY read.only.attendees.label       "Uczestnicy">
 <!ENTITY read.only.description.label     "Opis">

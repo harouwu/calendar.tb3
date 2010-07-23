@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Vis i dag-vinduet">
 <!ENTITY todaypane.showTodayPane.accesskey "a">
 <!ENTITY todaypane.statusButton.label "I dag-vinduet">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

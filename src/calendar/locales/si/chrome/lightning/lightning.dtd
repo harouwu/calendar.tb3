@@ -123,3 +123,7 @@
 <!ENTITY lightning.toolbar.newevent.label     "සිදුවීම">
 <!ENTITY lightning.toolbar.newtask.label      "කාර්යය">
 <!ENTITY todaypane.statusButton.label "දවසේ තලය">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

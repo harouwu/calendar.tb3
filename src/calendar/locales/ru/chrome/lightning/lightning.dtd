@@ -123,3 +123,7 @@
 <!ENTITY todaypane.showTodayPane.label "Показывать Мероприятия">
 <!ENTITY todaypane.showTodayPane.accesskey "М">
 <!ENTITY todaypane.statusButton.label "Мероприятия">
+
+<!-- delegate dialog -->
+<!ENTITY delegate-dialog.choose-delegate.label "Choose a delegate">
+<!ENTITY delegate-dialog.keep-delegator-updated.label "Keep me updated">

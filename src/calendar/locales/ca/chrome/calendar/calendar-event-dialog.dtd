@@ -388,6 +388,8 @@
 <!ENTITY read.only.decline.label         "No hi assistiré">
 <!ENTITY read.only.tentative.label 		 "Potser hi assistiré">
 <!ENTITY read.only.needs.action.label    "Ho confirmaré més tard">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Recorda-m'ho:">
 <!ENTITY read.only.attendees.label       "Assistents">
 <!ENTITY read.only.description.label     "Descripció">

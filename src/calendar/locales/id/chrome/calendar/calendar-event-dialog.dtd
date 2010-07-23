@@ -384,6 +384,8 @@
 <!ENTITY read.only.decline.label         "Saya tidak bisa hadir">
 <!ENTITY read.only.tentative.label       "Mungkin saya hadir">
 <!ENTITY read.only.needs.action.label    "Akan saya konfirmasi nanti">
+<!ENTITY read.only.delegate.label        "I delegate">
+<!ENTITY read.only.keep-delegator-updated.label "Keep me updated">
 <!ENTITY read.only.reminder.label        "Alarm:">
 <!ENTITY read.only.attendees.label       "Undangan">
 <!ENTITY read.only.description.label     "Keterangan">
