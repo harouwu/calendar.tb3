@@ -1926,9 +1926,9 @@ function updateCalendar() {
 
         let componentURL = null;
         if (item.id) {
-            let cache = calendar.mItemInfoCache;
+            let cache = wrappedCalendar.mItemInfoCache;
             if (!cache)
-                cache = calendar.mUncachedCalendar.wrappedJSObject.mItemInfoCache;
+                cache = wrappedCalendar.mUncachedCalendar.wrappedJSObject.mItemInfoCache;
             if (cache) {
                 if (cache[item.id]) {
                     componentURL = cache[item.id].locationPath;

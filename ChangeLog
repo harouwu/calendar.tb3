@@ -1,5 +1,9 @@
 2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/base/content/dialogs/calendar-event-dialog.js:
+	(updateCalendar) access to cached/uncached calendars must be done
+	via the wrappedCalendar object.
+
 	* src/calendar/base/content/calendar-item-editing.js:
 	(openEventDialog) restored the "initialDate" parameter.
 	Consequently, restored the initialStartDateValue argument for the
