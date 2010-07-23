@@ -52,7 +52,7 @@ function build {
     rm -rf skin/calendar/dialogs
     rm -rf skin/calendar/preferences
 
-    cp -fr $BASE/src/calendar/base/content/* content/calendar/
+    cp -fr $BASE/src/calendar/base/content/* $BASE/src/calendar/base/src/calUtils.js content/calendar/
     mv -f content/calendar/dialogs/* content/calendar/
     mv -f content/calendar/widgets/calendar-subscriptions-list.xml content/calendar/
     rm -f content/calendar/*.inc
@@ -61,8 +61,8 @@ function build {
     cd content/calendar/
     for x in calendar-print-dialog.js calendar-common-sets.xul calendar-dnd-listener.js calendar-migration-dialog.js
     do
-        python $BASE/tools/Preprocessor.py $cppdefs $x > cpp.out;
-        mv -f cpp.out $x;
+        python $BASE/tools/Preprocessor.py $cppdefs $x > pp.out;
+        mv -f pp.out $x;
     done
 
     cd $BASE/tmp/chrome/
