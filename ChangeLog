@@ -1,5 +1,12 @@
 2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/base/content/calendar-view-core.xml:
+	(calendar-editable-item.handlers.draggesture): same as below.
+
+	* src/calendar/base/content/calendar-multiday-view.xml:
+	(calendar-event-column.startSweepingToModifyEvent): return if the
+	current item is an invitation.
+
 	* src/calendar/lightning/content/lightning-utils.js:
 	(ltnInitMailIdentitiesRow): take the identities from the acl entry
 	corresponding to the current calendar if the latter is of type

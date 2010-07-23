@@ -1682,6 +1682,7 @@
         <parameter name="aMouseY"/>
         <body><![CDATA[
           if (!isCalendarWritable(aOccurrence.calendar) ||
+              aOccurrence.calendar.isInvitation(aOccurrence) ||
               aOccurrence.calendar.getProperty("capabilities.events.supported") === false) {
               return;
           }
