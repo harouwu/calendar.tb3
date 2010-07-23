@@ -1,3 +1,10 @@
+2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-editing.js:
+	(openEventDialog) restored the "initialDate" parameter.
+	Consequently, restored the initialStartDateValue argument for the
+	editing window. Also, restored the "onNewTodo" argument.
+
 2010-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/content/calendar-common-sets.js,

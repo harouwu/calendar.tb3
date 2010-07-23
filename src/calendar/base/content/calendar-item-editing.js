@@ -155,7 +155,7 @@ function createEventWithDialog(calendar, startDate, endDate, summary, event, aFo
 
         cal.alarms.setDefaultValues(event);
     }
-	
+
     openEventDialog(event, calendar, "new", onNewEvent, null);
 }
 
@@ -209,7 +209,7 @@ function createTodoWithDialog(calendar, dueDate, summary, todo, initialDate) {
             // the todo must have an entry date if we want to set an alarm
             todo.entryDate = initialDate;
         }
-        
+
         cal.alarms.setDefaultValues(todo);
     }
 
@@ -226,7 +226,7 @@ function createTodoWithDialog(calendar, dueDate, summary, todo, initialDate) {
  *                                           modification.
  * @param aPromptOccurrence     If the user should be prompted to select if the
  *                                parent item or occurrence should be modified.
- * @param initialDate           (optional) The initial date for new task datepickers 
+ * @param initialDate           (optional) The initial date for new task datepickers
  */
 function modifyEventWithDialog(aItem, job, aPromptOccurrence, initialDate) {
     var onModifyItem = function(item, calendar, originalItem, listener) {
@@ -247,17 +247,8 @@ function modifyEventWithDialog(aItem, job, aPromptOccurrence, initialDate) {
     }
 }
 
-/**
- * Opens the event dialog with the given item (task OR event)
- *
- * @param calendarItem      The item to open the dialog with
- * @param calendar          The calendar to open the dialog with.
- * @param mode              The operation the dialog should do ("new", "modify")
- * @param callback          The callback to call when the dialog has completed.
- * @param job               (optional) The job object for the modification.
- * @param initialDate       (optional) The initial date for new task datepickers  
- */
- function itemObserver(componentURL, openArgs) {
+/* ACL code */
+function itemObserver(componentURL, openArgs) {
     this.componentURL = componentURL;
     this.openArgs = openArgs;
 }
@@ -305,6 +296,7 @@ function loadItemCalDAVAclEntry(aclMgr, item, calendar, openArgs) {
 
     return compEntry;
 }
+/* /ACL code */
 
 /* hackich: this is the old implementation of isCalendarWritable, without the
    ACL code */
@@ -315,9 +307,21 @@ function isCalendarAvailable(aCalendar) {
              aCalendar.getProperty("requiresNetwork") === false));
 }
 
-function openEventDialog(calendarItem, calendar, mode, callback, job) {
+/**
+ * Opens the event dialog with the given item (task OR event)
+ *
+ * @param calendarItem      The item to open the dialog with
+ * @param calendar          The calendar to open the dialog with.
+ * @param mode              The operation the dialog should do ("new", "modify")
+ * @param callback          The callback to call when the dialog has completed.
+ * @param job               (optional) The job object for the modification.
+ * @param initialDate       (optional) The initial date for new task datepickers
+ */
+function openEventDialog(calendarItem, calendar, mode, callback, job, initialDate) {
     // Set up some defaults
     mode = mode || "new";
+
+    /* ACL code */
     var compAclEntry = null;
 
     try {
@@ -334,6 +338,7 @@ function openEventDialog(calendarItem, calendar, mode, callback, job) {
         }
     }
     catch(e) {}
+    /* /ACL code */
 
     calendar = calendar || getSelectedCalendar();
     var calendars = getCalendarManager().getCalendars({});
@@ -377,14 +382,18 @@ function openEventDialog(calendarItem, calendar, mode, callback, job) {
     args.mode = mode;
     args.onOk = callback;
     args.job = job;
+    args.initialStartDateValue = (initialDate || getDefaultStartDate());
 
     // this will be called if file->new has been selected from within the dialog
     args.onNewEvent = function(calendar) {
         createEventWithDialog(calendar, null, null);
-    }
+    };
+    args.onNewTodo = function(calendar) {
+        createTodoWithDialog(calendar);
+    };
 
     // the dialog will reset this to auto when it is done loading.
-    //window.setCursor("wait");
+    window.setCursor("wait");
 
     // ask the provide if this item is an invitation. if this is the case
     // we'll open the summary dialog since the user is not allowed to change
@@ -392,20 +401,22 @@ function openEventDialog(calendarItem, calendar, mode, callback, job) {
     var isInvitation = false;
     if (calInstanceOf(calendar, Components.interfaces.calISchedulingSupport)) {
         isInvitation = calendar.isInvitation(calendarItem);
-    } 
+    }
     // open the dialog modeless
     var url;
+    /* ACL code */
     if (isCalendarAvailable(calendar)
       //  && isCalendarWritable(calendar)
         && (mode == "new"
             || (mode == "modify"
                 && !isInvitation
                 && (!compAclEntry || compAclEntry.userCanModify())))) {
+        /* /ACL code */
         url = "chrome://calendar/content/calendar-event-dialog.xul";
     } else {
         url = "chrome://calendar/content/calendar-summary-dialog.xul";
     }
-	
+
     openDialog(url, "_blank", "chrome,titlebar,resizable", args);
 }
 
