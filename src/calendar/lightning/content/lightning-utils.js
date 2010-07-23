@@ -82,11 +82,26 @@ function ltnInitMailIdentitiesRow() {
     }
 
     addMenuItem(menuPopup, ltnGetString("lightning", "imipNoIdentity"), "none");
-    var identities = getAccountManager().allIdentities;
-    for (var i = 0; i <  identities.Count(); ++i) {
-        var identity = identities.GetElementAt(i)
-                                 .QueryInterface(Components.interfaces.nsIMsgIdentity);
-        addMenuItem(menuPopup, identity.identityName, identity.key);
+    /* ACL code */
+    if (gCalendar && gCalendar.type == "caldav") {
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.nsISupports)
+                               .wrappedJSObject;
+        let entry = aclMgr.calendarEntry(gCalendar.uri);
+        let identities = entry.ownerIdentities;
+        for (var i = 0; i < identities.length; i++) {
+            var identity = identities[i].QueryInterface(Components.interfaces.nsIMsgIdentity);
+            addMenuItem(menuPopup, identity.identityName, identity.key);
+        }
+    }
+    /* /ACL code */
+    else {
+        let identities = getAccountManager().allIdentities;
+        for (var i = 0; i <  identities.Count(); ++i) {
+            let identity = identities.GetElementAt(i)
+                                     .QueryInterface(Components.interfaces.nsIMsgIdentity);
+            addMenuItem(menuPopup, identity.identityName, identity.key);
+        }
     }
     try {
         var sel = gCalendar.getProperty("imip.identity");

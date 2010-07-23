@@ -1,5 +1,10 @@
 2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/lightning/content/lightning-utils.js:
+	(ltnInitMailIdentitiesRow): take the identities from the acl entry
+	corresponding to the current calendar if the latter is of type
+	"caldav".
+
 	* src/calendar/base/content/dialogs/calendar-event-dialog.js:
 	(updateCalendar) access to cached/uncached calendars must be done
 	via the wrappedCalendar object.
