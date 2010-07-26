@@ -1,3 +1,9 @@
+2010-07-26  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* repackage.sh: ensure that everything in
+	$BASE/src/calendar/lightning/content/ gets copied to
+	content/lightning/, except lightning.js which is a pref file.
+
 2010-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/lightning/content/imip-bar.js: (setupMsgIdentities)

@@ -66,8 +66,8 @@ function build {
     done
 
     cd $BASE/tmp/chrome/
-    cp -fr $BASE/src/calendar/lightning/content/imip-* content/lightning/
-    cp -fr $BASE/src/calendar/lightning/content/messenger-overlay* content/lightning/
+    cp -fr $BASE/src/calendar/lightning/content/*.{js,xul,xml,css} content/lightning/
+    rm -f content/lightning/lightning.js
 
     # messenger-overlay-sidebar.xul must be preprocessed
     cd $BASE/src/calendar/lightning/content/
