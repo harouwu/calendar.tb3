@@ -495,8 +495,7 @@ function setupMsgIdentities() {
     if (!gIdentities) {
         var acctmgr = Components.classes["@mozilla.org/messenger/account-manager;1"]
                       .getService(Components.interfaces.nsIMsgAccountManager);
-        var msgURI = GetLoadedMessage();
-        var msgHdr = messenger.msgHdrFromURI(msgURI);
+        var msgHdr = gMessageDisplay.displayedMessage;
         if (msgHdr.accountKey) {
             // First, check if the message has an account key. If so, we can use the
             // account identities to find the correct recipient
