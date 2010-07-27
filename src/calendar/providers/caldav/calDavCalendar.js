@@ -53,22 +53,6 @@ Components.utils.import("resource://calendar/modules/calAuthUtils.jsm");
 //
 // calDavCalendar.js
 //
-function backtrace(aDepth) {
-    let depth = aDepth || 10;
-    let stack = "";
-    let frame = arguments.callee.caller;
-
-    for (let i = 1; i <= depth; i++) {
-        stack += i+": "+ frame.name + "\n";
-        frame = frame.caller;
-        if (!frame){
-            break;
-        }
-    }
-
-    return stack;
-}
-
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
 
 function calDavCalendar() {

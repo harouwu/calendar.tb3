@@ -51,22 +51,6 @@ Components.utils.import("resource://calendar/modules/calUtils.jsm");
  * @param aForceAllDay  (optional) Make sure the event shown in the dialog is an
  *                                   allday event.
  */
-function backtrace(aDepth) {
-    let depth = aDepth || 10;
-    let stack = "";
-    let frame = arguments.callee.caller;
-
-    for (let i = 1; i <= depth; i++) {
-        stack += i+": "+ frame.name + "\n";
-        frame = frame.caller;
-        if (!frame){
-            break;
-        }
-    }
-
-    return stack;
-}
-
 function createEventWithDialog(calendar, startDate, endDate, summary, event, aForceAllday) {
     const kDefaultTimezone = calendarDefaultTimezone();
 

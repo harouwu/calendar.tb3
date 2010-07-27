@@ -34,22 +34,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/* STACK method from lightning */
-function backtrace(aDepth) {
-    let depth = aDepth || 50;
-    let stack = "";
-    let frame = Components.stack.caller;
-    for (let i = 1; i <= depth && frame; i++) {
-        stack += i + ": [" + frame.filename + ":" +
-            frame.lineNumber + "] " + frame.name + "\n";
-        frame = frame.caller;
-    }
-    return stack;
-}
-
 function fixURL(url) {
     if (!url) {
-        dump("fixURL: no URL! - backtrace\n" + backtrace());
+        dump("fixURL: no URL! - backtrace\n" + STACK());
         throw("fixURL: no URL!\n");
     }
     let fixedURL = url;
