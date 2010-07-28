@@ -1,0 +1,933 @@
+2010-07-20  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-summary-dialog.js:
+	(saveDelegationInfo): we remove the first delegate only after the
+	delegation chain has been requested. Otherwise that chain will
+	always be empty, leaving the responded invitation in an
+	inconsistent state.
+
+	* src/calendar/base/content/calendar-item-editing.js:
+	(findDelegationAttendees): we now return an array as it keeps the
+	delegation chain sorted.
+
+2010-07-13  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(freeBusyCacheEntry): we now pass the calId as parameter.
+	(freeBusyCacheEntry.getEntries): we simply check that the
+	"interval" member of each entries is available, altough the
+	contrary should never happen.
+	(freeBusyCacheEntry.integrateEntries): when aEntries is null, we
+	create a mock array with a single fb interval with a type of
+	"UNKNOWN".
+	(conflictHandler.onResult): returns a conflict only for "BUSY"
+	entries, ignoring anything else.
+
+	* src/calendar/base/src/calFreeBusyService.js:
+	(calFreeBusyListener.onResult) we invoke notifyResult even if
+	"aResult" is null, to avoid breaking the chain of events.
+
+2010-06-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-common-sets.js
+	(calendarController.doCommand): the delete command is sometimes a
+	"cmd_delete", directed at a different view than the calendar
+	views. In that case, we must not display the confirmation dialog.
+	Additionally, the confirmation dialog for event deletion would
+	appear when deleting tasks, therefore with the wrong wording.
+
+2010-06-14  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/clipboard.js (copyToClipboard): we
+	ensure the recurrenceId attribute is set to null prior to copying
+	the element to the clipboard, to avoid further parsing errors from
+	the buggy ICS Parser provided with Lightning.
+
+	* src/calendar/base/content/calendar-unifinder.js:
+	(unifinderTreeView.removeItems): since the row indexes are not
+	recomputed after each removal, they are stacked in an array which
+	is sorted afterwards and then wandered backwards in order to
+	perform the actual removal with the proper index.
+
+2010-06-12  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/lightning.js: disabled the
+	default value for "calendar.categories.names" as it is defined in
+	the locale files and risk overriding the default value in other
+	custom modules.
+
+	* src/calendar/base/content/preferences/categories.js:
+	(gCategoriesPane.init): extracted the categories initialisation
+	code into its own method named "loadCategoryList".
+	(gCategoriesPane.resetCategories): new action method that resets
+	the categories list to the defaults if modified by the user.
+
+2010-06-09  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-view-core.xml
+	(calendar-editable-item.startEditing): don't attempt to hide the
+	event location label if it's null.
+
+2010-06-08  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js (sendItems): removed
+	duplicate "Recipient" header for participant recipients. Also,
+	NON-PARTICIPANT recipients must continue receiving email
+	exchanges.
+
+2010-05-21  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(conflictHandler._readFreeBusy): invokes "this.onResult" directly
+	when entries are available from the cache.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-freebusy.xml:
+	(freebusy-grid.nextSlot): we shift the start date when its hours
+	component passes over the day end hour.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(onNextSlot) removed the handling of the time range menu, which
+	was removed. Moved the time range code into "initTimeRange".
+
+	* src/calendar/base/content/calendar-task-tree.xml:
+	(calendar-task-tree.mTaskTreeObserver.onAdditem)
+	(calendar-task-tree.mTaskTreeObserver.onModifyitem): prevent
+	GUI operations for items in calendars that should not appear in
+	the today pane.
+
+	* src/calendar/base/content/calendar-item-editing.js:
+	(doTransaction): add an entry to the new global
+	"gActiveOperations" dictionary when a transaction is in progress
+	so that two transactions cannot occur concurrently on the same
+	item.
+
+2010-05-18  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-multiday-view.xml:
+	(calendar-event-box.setEditableLabel) set the value of the
+	location label if the item contains such a value.
+
+	* src/calendar/base/content/calendar-view-core.xml:
+	(calendar-editable-item.eventLocationLabel): new accessor that
+	returns the new XUL:element representing the event location.
+	(calendar-editable-item.startEditing)
+	(calendar-editable-item.stopEditing): hide and show the new event
+	location label.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(onAccept): added code to prevent the closing of the window, check
+	the freebusy of every attendee and prompt a conflict dialog if
+	needed.
+
+	* src/calendar/base/content/calendar-unifinder.js:
+	(unifinderKeyPress): see below.
+
+	* src/calendar/base/content/calendar-common-sets.js:
+	(calendarController.doCommand): see below.
+
+	* src/calendar/base/content/agenda-listbox.js:
+	(agendaListbox.onKeyPress:) prompt a confirmation dialog before
+	deleting events.
+
+2010-05-17  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-freebusy.xml:
+	(freebusy-grid.setRange): new accessor that sets the lower and
+	upper limits between which the potential event should fit.
+	(freebusy-grid.initTimeRange): decoupled "mStartHour/mEndHour" and
+	"mRangeXXXHour/Minute", the former being used only for choosing
+	which hours are displayed and the latter being used to determine a
+	time range in which the event should fit. They may or may not have
+	the same value.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(onLoad): initialize the new time range widgets with the values of
+	the event start and end time.
+	(onNextSlot): invoke the new "setRange" method on the freebusy
+	grid widget with the values corresponding to the current time
+	range settings.
+	(onTimeRange): new callback for displaying or hiding the time
+	fields depending on the value of the time range popup menu.
+
+2010-05-12  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-freebusy.xml:
+	(freebusy-grid.nextSlot): we now deduce and cache offdays in
+	"this.mOffdays".
+	(freebusy-grid.nextSlot): the end hour of the current event may
+	match the end hour of the current day as long as the end minute is
+	0. Also, we ensure that the resulting period does not overlap with
+	off days.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js:
+	(freeBusyRequestListener, freeBusyCacheEntry)
+	(freeBusyRowController): new classes for handling cached freebusy entries.
+
+2010-05-06  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-properties-dialog.js:
+	(onLoad, onAcceptDialog): added code to retrieve and save the
+	"includeInFreeBusy" on calendar that support it.
+
+	* src/calendar/base/src/calDavCalendar.js
+	(supportsFreeBusyTransparency, includeInFreeBusy): new properties
+	that handles the availability and the value of the
+	"schedule-calendar-transp" property.
+
+2010-05-05  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.xml:
+	(attendees-list._resolveListByName): a bug in the exception
+	handling would prevent the search from happening on any other than
+	the first addressbook.
+
+	* src/calendar/base/src/calTransactionManager.js
+	(resetAttendeeStatus): we don't reset the attendee status to
+	"NEEDS-ACTION" if its role is "NON-PARTICIPANT". We also no longer
+	set its role to "REQ-PARTICIPANT", as the organizer may have
+	chosen to assign it another role.
+
+	* src/calendar/base/content/calendar-summary-dialog.js:
+	(saveDelegationInfo): the "item-delegate-staytuned" checkbox is now
+	disable in the template, since it is not properly handled yet.
+	(updateAttendees): attendees are now displayed one by line to
+	avoid the delegation text from overlapping the rest of the list.
+
+	* src/calendar/base/content/calendar-item-editing.js
+	(checkAndSendItipMessage): Fixed a typo. When constructing the
+	itip item, we avoid setting rsvp and the participation status for
+	attendee having their role set to "NON-PARTICIPANT".
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js
+	(onAttrModified): catch the moment when the focus is lost from an
+	attendee input field and invoke "resolvePotentialList" on it. Keep
+	a reference of the last checked value to not verify the same entry
+	twice.
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.xml
+	(attendees-list.resolvePotentialList): new method, designed to
+	resolve contact lists and decompose them in individual freebusy
+	entries.
+
+2010-05-03  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calTransactionManager.js
+	We make sure that the organizer is not null when
+	resetting the participation status.
+
+2010-04-15  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog.js
+	(setShowTimeAs): all day events should be opaque by default.
+
+2010-04-07  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-summary-dialog.js: added
+	missing translations.
+
+	* src/calendar/base/src/calUtils.js (calGetString): instead of
+	returning a useless failure string, we return the property key
+	instead. This enables the same behaviour as with gettext.
+
+2010-03-31  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-task-tree.xml
+	(calendar-task-tree.refresh): we enable the "aCompleteRefresh"
+	argument only when the current calendar in the loop is the first
+	one, otherwise, the shown tasks will only be those of the latest
+	in the list.
+
+2010-03-31  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/content/calendar-summary-dialog.xul
+	Fixed typo which would prevent setting a reminder of
+	1 week for received invitations
+
+	* src/calendar/base/content/calendar-item-editing.js
+	Modified the checkAndSendItipMessage() function so that
+	if the part-state is the same and the delegated-to is
+	the same, we just don't send any invitatation reply.
+	This was causing major pain when simply setting a reminder
+	to an invitation email.
+
+2010-03-30  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js (checkServerCaps): SOGo
+	provides a "false" inbox too but the caldav provider handles it
+	wrong. In particular, the inbox "calendar" is not a separate
+	instance, which causes an overwrite of the metadata when a regular
+	calendar and its corresponding inbox are updated.
+
+	* src/calendar/base/content/calendar-task-tree.xml
+	(calendar-task-tree.mTaskTreeObserver.onPropertyChanged): take the
+	"showInTodayPane" property into account, if this tree is part of
+	the today-pane.
+	(calendar-task-tree.mustShowInTaskTree): new method that returns
+	true if the id of the current tree is "unifinder-todo-tree" and
+	the calendar passed as parameter has its "showInTodayPane"
+	propery set.
+
+2010-03-25  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog-attendees.js
+	(onLoad): restore the width of the attendees and freebusy
+	containers, saved from the new "saveWidgets" methods.
+
+2010-03-24  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-bindings.xml
+	(item-date-row.Item): instead of keeping their original timezone
+	and displaying it, the dates are now displayed according to the
+	user timezone.
+
+	* src/calendar/lightning/content/messenger-overlay-sidebar.js
+	(gInvitationsCalendarManagerObserver): enhanced with interface
+	calIObserver so that the new "showInvitations" parameter is taken
+	directly into account (via notification).
+
+	* src/calendar/base/content/agenda-listbox.js
+	(agendaListbox.refreshCalendarQuery): hacked to refresh items only
+	from calendars having the property "showInTodayPane" set to true.
+	(agendaListbox.calendarObserver.onPropertyChanged): take
+	"showInTodayPane" into account and ignore "disable" since the
+	latter is useless because onCalendarAdded and onCalendarRemoved
+	already take care of its purpose.
+
+	* src/calendar/base/content/calendar-unifinder.js
+	(unifinderObserve.onCalendarAdded)
+	(unifinderObserve.onCalendarRemoved): check whether the unifinder
+	is visible before executing any update, in order to avoid useless
+	calls of getItems().
+
+	* src/calendar/base/content/calendar-multiday-view.xml: same as below.
+
+	* src/calendar/base/content/calendar-month-view.xml
+	(calendar-month-view.isActiveView): new method that determines
+	whether the current instance is the active view.
+	(calendar-month-view.refresh, calendar-month-view.onCalendarAdded)
+	(calendar-month-view.onCalendarRemoved): make use of the new
+	method above to reduce the amount of invocations of getItems.
+
+	* src/calendar/base/content/calendar-minimonth-busy.js
+	(minimonthBusyListener.onCalendarAdded)
+	(minimonthBusyListener.onCalendarRemoved): we now return directly, to
+	avoid updating the minimonth with costly getItems.
+	(minimonthBusyListener.onAddItem)
+	(minimonthBusyListener.onDeleteItem)
+	(minimonthBusyListener.onModifyItem): we also return directly
+	here, to avoid a UI inconsistency where any change to an event
+	would cause the boldening of the referred dates.
+
+2010-03-23  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calIcsParser.js
+	We fallback to ISO8859-1 when UTF-8 fails
+	for ICS import.
+
+	* Added
+	src/calendar/base/content/sun-calendar-event-dialog-attendees.js
+	and src/calendar/base/content/sun-calendar-event-dialog-attendees.xul
+	and backported patch from bug #367359
+	Also set the default zoom to 200%.
+
+	* src/calendar/base/content/sun-calendar-event-dialog.{js,xul}
+	Added the "Show Time as Free" checkbox in the main event
+	editing window.
+
+2010-02-19  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-editing.js
+	Small fix in openEventDialog() so event editing works
+	with local calendars.
+	* Bumped version number to v0.9.9
+
+2010-02-02  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-editing.js
+	(openEventDialog): allow event editing when the acl manager is not present.
+
+2010-02-01  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-editing.js
+	(openEventDialog): we must check the ACL of an event even when
+	isCalendarWritable returns false, since modification of an event
+	can still be granted even though the calendar is read-only to the
+	current user. Reimplemented the old versoin of isCalendarWritable,
+	without the ACL code, with the name "isCalendarAvailable" for that
+	purpose.
+
+	* src/calendar/base/content/calendar-summary-dialog.js (onLoad):
+	we must test whether the entry ACL has been filled before invoking
+	its accessors. This situation can happen when the acl manager has
+	never been invoked, for a read-only calendar.
+	(onAccept): we now check whether the instance being editted is an
+	event before saving delegation information. This solves a bug
+	where summary dialog fails to close when displaying a task.
+
+2010-01-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-item-editing.js
+	(openEventDialog): enable the fetching of ACL on events when the
+	parent calendar IS writable. Furthermore, the fact that a calendar
+	is writable should not preclude the code from checking the
+	modification write when choosing the window to display.
+
+2009-12-01  Ludovic Marcotte <lmarcotte@inverse.ca>
+
+        * Reworked the "Meeting" category for the
+	English and French locale.
+
+2009-11-26  Ludovic Marcotte <lmarcotte@inverse.ca>
+
+        * Added src/patches/468846_oracle.diff - which
+	was missing in previous commits
+	* src/calendar/providers/storage/calStorageCalendar.js
+	Modified initDB() to create indexes as mentioned in
+	https://bugzilla.mozilla.org/show_bug.cgi?id=529326
+	This speeds up initial loading of cached CalDAV
+	calendars and subsequent TB starts.
+	* Bumped version number to 0.9.8pre1
+
+2009-10-27  Ludovic Marcotte <lmarcotte@inverse.ca>
+
+        * Added checks in case start/end date isn't defined so
+	we do not throw worthless exceptions and stop.
+
+2009-10-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js
+	(imipCalDAVComponentACLEntryObserver.observe): use
+	"this.componentURL" to retrieve the base filename of the component
+	rather than the full url.
+
+2009-08-31  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* Added support for iTIP delegation.
+
+2009-08-21  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/messenger-overlay-sidebar.xul: we
+	enable the "export" menu items from the File menu to appear in
+	"task" mode.
+
+	* src/calendar/base/content/calendar-common-sets.js: since
+	"currentView()" only pertains to calendar views, the
+	"calendar_export_selection_command" now checks whether the current
+	mode is not actually the "task" mode, in which case the view taken
+	into account is the "calendar-task-tree" element.
+
+	* src/calendar/base/content/calendar-task-tree.xml: added new
+	"getSelectedItems" method that returns a list of the parent items
+	whose children are currently selected in the view. This method
+	matches the ones from the "calendar" views in order to facilitate
+	the export functions.
+
+	* src/calendar/lightning/content/messenger-overlay-sidebar.xul,
+	src/calendar/base/content/calendar-common-sets.js: added files for
+	further modifications.
+
+2009-08-18  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-task-tree.xml: added module
+	for further modification. Modified to apply the same speedup
+	modifications that were done to the other calendar views. Fixed
+	the handling of recurring items when adding or removing tasks.
+	Fixed batch mode handling to use a counter and avoid any refresh
+	when that counter drops to 0.
+
+2009-08-10  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js: fixed a typo that
+	prevented the correct loading of the acl for the calendar entry
+	matching the invitation. In the same spirit, the
+	imipCalDAVComponentACLEntryObserver would not properly handle the
+	returned entry URL.
+
+	* src/calendar/base/content/calendar-item-editing.js: added code
+	to enable modification of certain events based on their acl, even
+	if the user cannot add events to the calendar.
+
+	* src/calendar/base/content/calendar-summary-dialog.js: imported
+	module and modified it to set it's readOnly mode based on the
+	userCanRespond and userCanModify permissions from CalDAVAclManager.
+
+2009-08-04  Ludovic Marcotte <lmarcotte@inverse.ca>
+
+	* Added src/patches/468846.diff - even if it's a temporary fix
+	* src/calendar/providers/storage/calStorageCalendar.js and
+	src/calendar/base/src/calTransactionManager.js - we no longer
+	reset the partipation status when the attendee's id (ie., the
+	email address) is identical to the one from the organizer.
+
+2009-08-04  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js (addDAVItem): A bug was
+	introduced in with the fix below, where the metadata would not be
+	saved for new items when a listener was not provided. In the case
+	of a non-cached calendar, the issue is minor because we lose the
+	metadata between sessions. For cached calendars, the presence of a
+	listener argument should have no impact.
+
+2009-07-24  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: addDAVItem fixed to not
+	add new/updated items directly to the cached calendar but to
+	notify the super calendar's listener instead, as done in multiple
+	other places when solving bug
+	https://bugzilla.mozilla.org/show_bug.cgi?id=463679. In this case,
+	the bug is not totally the same but the underlying mechanism is
+	similar. Note that addDAVItem can be used during a refresh
+	operation, during which no listener will be provided. We then
+	revert to the previous mechanism.
+
+	* src/calendar/providers/storage/calStorageCalendar.js: reverted
+	latest patch below as it prevented some operations from being
+	completed. Replaced with a better and cleaner fix.
+
+2009-07-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/storage/calStorageCalendar.js
+	(adoptItem): avoid a useless notification that triggers a double
+	"onAddItem".
+
+	* src/calendar/base/src/calDavCalendar.js: fixed
+	getInvitedAttendee to return the first matching result.
+
+	* src/calendar/base/content/calendar-multiday-view.xml:
+	deleteItemsFromCalendar fixed to remove occurrences found in the
+	column headers.
+
+	* src/calendar/lightning/content/imip-bar.js: adapted code to run
+	without acl manager, thereby removing dependency on SOGo
+	Connector.
+
+2009-07-22  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: webdav sync: fixed a
+	bug that would continuously refresh the inbox.
+	Added a patch from Simon Vaillancourt @ Oracle that postpones any
+	refresh method prior to an initial delay specified in the
+	"calendar.caldav.refresh.initialdelay" setting.
+	Fixed the handling of character data, thanks to Simon Vaillancourt.
+
+	* We avoid having view triggering getItems when an "onLoad" or an
+	"onEndBatch" notification is received. Instead, we reenable the
+	onAddItem, onModifyItem and onDeleteItem callbacks during batch
+	mode. This optimization greatly reduces the amount of accesses to
+	the cache database and the amount of elements needed to be
+	redrawn. (no bugzilla bug report yet)
+
+	* src/calendar/base/src/calCachedCalendar.js: we prevent the
+	cached calendar from refreshing at initialization, because the
+	registration mechanism must take care of some things beforehand.
+
+	* src/calendar/base/src/calCalendarManager.js: initial cached
+	calendars won't have a name, we initialize thus to "" to avoid
+	errors during onCalendarAdded callbacks. The registerCalendar
+	method set the uncached version in its cache, we fix this to avoid
+	further reference errors. We then refresh it.
+
+2009-07-21  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js: an exception occurs
+	when retrieving itip item containing a recurrence-id without a
+	master occurence. The exception is caught and we avoid displaying
+	the imip bar at that moment.
+	Fixed a case where no user calendars belonging to the user would
+	be found.
+
+2009-07-20  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/composite/calCompositeCalendar.js:
+	inhibit the prevention of getItems on non-cached-and-caldav
+	calendars.
+
+2009-07-19  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js: show a spinning
+	wheel until the proper message and buttons can be displayed. The
+	"requiresNetwork" property is not available on caldav calendars.
+	Therefore we only test for the calendar type for updating them.
+	Fixed exceptions occuring with CANCEL and REPLY messages.
+	Spinning wheel bugs:
+	  - a CANCEL request may sometime refer at first to an event that
+	    has already been deleted from the calendar, we ignore it in
+	    that case.
+
+	* src/calendar/lightning/content/imip-bar-overlay.xul: extracted
+	file for further modifications.
+
+2009-07-17  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calCachedCalendar.js: commented out the
+	update timer for cached calendars, since the timer for the views
+	already achieves the same effect.
+
+	* src/calendar/lightning/content/imip-bar.js: make better use of
+	the CalDAV acls. Ensure the calendars are updated before searching
+	the related event.
+
+2009-07-15  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-ui-utils.js: extracted file
+	for further modification
+	(appendCalendarItems) add a "tooltiptext" to the calendar menu
+	items for large calendar names.
+
+	* src/calendar/base/content/sun-calendar-event-dialog.xul: (new
+	file) assigned "id" field and value to the status bar privacy
+	labels.
+
+2009-07-09  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: it may happen that ACL
+	are loaded before the refresh starts. In that case, we used to
+	wait indefinitely for the a notification that has already passed.
+	This is now fixed.
+
+	* src/calendar/base/content/calendar-task-editing.js: check the
+	value of getSelectedCalendar() to avoid exceptions on null values.
+
+2009-07-08  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: webdav sync handler: we
+	trigger the "endBatch" event BEFORE the finalization of the
+	update to avoid locking problems in the cache database.
+	Also, we don't need to test for the presence of the
+	changeLogListener in the mACLRefreshData ivar, only for the ivar
+	itself.
+	The acl manager is only instantiated once, we can thus use it later
+	as indicator to whether it is available or not. We also allow
+	write access to calendars without ACL support.
+
+	* src/calendar/providers/composite/calCompositeCalendar.js
+	(getItems): instead of testing each calendar to see whether it's
+	ready, we only take the "readyCalendars" into account. This
+	enables views to receive an onOperationComplete event when no
+	calendar is available yet.
+	(calCompositeGetListenerHelper): the amount of pending requests
+	depends on the amount of enabled calendars that are declared ready.
+	(readyCalendars): new accessor that returns the amount of enabled
+	calendars that are declared ready.
+
+2009-07-07  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: the observe method was
+	modified to handle the new "caldav-acl-reset" notification. The
+	code was also simplified by triggering a refresh whenever the
+	mACLRefreshData ivar is set.
+	Completed the webdav sync implementation by handling the case
+	where a 403 error code would be return with a "valid-sync-token"
+	DAV error.
+
+2009-07-06  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/composite/calCompositeCalendar.js: when
+	calendars implement calISyncCalendar, we don't allow getItems
+	operations on them as long as they are not "loaded".
+
+	* src/calendar/base/src/calDavCalendar.js: bypass safeRefresh as
+	long as the ACLs are not loaded (Inverse edition).
+
+2009-07-03  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/agenda-listbox.js
+	(deleteItemsFromCalendar): we cannot duplicate the array of nodes
+	with Array.splice with Mozilla 1.8, therefore we wander the
+	nodeList reversely.
+
+2009-07-03  Ludovic Marcotte <lmarcotte@inverse.ca>
+
+	* Added patch for bug #453145
+
+2009-07-02  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js (safeRefresh): fixed
+	issues with unavailable calendars. (#502014)
+
+2009-06-30  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calIcsParser.js: added a new
+	"sanitizeICSValue" that pre-parse the ICS string in order to fix
+	errors that are not handled by libical.
+
+	* src/calendar/base/src/calStorageCalendar.js (writeEvent): be
+	tolerant for events which don't have a start or an end date.
+	Replace them with an empty string.
+
+	* src/calendar/base/src/calDavCalendar.js: webdav sync: do not try
+	to delete items which are not present in the item id cache. Added
+	new "finalizeUpdatedItems" with code executed when a safeRefresh
+	is concluded. Call that new method from the
+	getUpdatedItem_WebdavSync method too.
+
+	* src/calendar/base/src/calCalendarManager.js: we do not post
+	"onCalendarRegistered" notifications on new calendars before their
+	cache is initialized.
+
+2009-06-29  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-invitations-manager.js:
+	only refreshs the enabled calendars (first inclusion).
+
+	* src/calendar/base/content/calendar-multiday-view.xml
+	(deleteItemsFromCalendar): duplicate the mEventInfos array so as
+	to be able to wander through the array "normally" without having
+	to keep the index count up-to-date.
+
+	* src/calendar/base/content/calendar-month-view.xml
+	(deleteItemsFromCalendar): use the "deleteHash" only to flag the
+	current item as deleted.
+
+	* src/calendar/base/content/calendar-minimonth-busy.js
+	(parseBoxBusy, updateBoxBusy): use "\u001a" as separator instead
+	of ";".:
+
+	* src/calendar/base/content/agenda-listbox.js
+	(agendaListbox.deleteItemsFromCalendar) duplicate the childNodes
+	array so that we can delete the childNode directly without having
+	to maintain an index count.
+
+2009-06-26  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-unifinder.js,
+	src/calendar/base/content/agenda-listbox.js,
+	src/calendar/base/content/calendar-minimonth-busy.js,
+	src/calendar/base/content/calendar-month-view.xml,
+	src/calendar/base/content/calendar-multiday-view.xml: modified
+	onCalendarAdded and /-Removed to add or delete items from the
+	relevant calendar only. (fixes #500718)
+
+2009-06-19  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js: implemented webdav sync
+	spec support. (implements #498690 and makes #498731 a non-issue)
+
+2009-06-02  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* Added fix in calDavCalendar.js for better handling of network
+	errors.
+
+2009-06-02  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added fix for bug #457206
+
+2009-06-01  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Added fix for bug #488720
+
+2009-05-17  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added CalDAV fix for bug #455939
+
+2009-05-05  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js
+	Make sure that the IMIP bar is present before
+	trying to collapse it in imipOnUnload()
+
+2009-05-01  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Bumped version to v0.9.4
+	* Modified the code to handle the fact that
+	the ACL manager from SOGo Connector could
+	potentially not be present and we fallback in
+	this case to what we had before (ie., prior
+	to the ACL support addition)
+	* Added fix for bug #486789
+
+2009-04-06  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Bumped the version number to v0.9.3
+	* Added patch for bug #462048
+	* Adapted code fix for bug #416190
+	* Added patches for bug #435166
+	* Added patch for bug #415509
+
+2009-03-18  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Bumped the version number to v0.9.2
+	* Added src/calendar/base/content/today-pane.xul
+	and backported fix for bug #412096
+	* Backported patch from bug #470394
+
+2009-02-23  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Commited change for version number (0.9.1)
+	* Updated fix wrt bug #468723
+
+2009-01-05  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Added "src/patches/462109.diff"
+	so and modified repackage.sh so that we not add
+	attendees to new events / tasks when creating them
+	by conversion.
+
+2008-12-30  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Added src/patches/421329.diff
+	src/calendar/base/content/sun-calendar-event-dialog-freebusy.xml
+	to fix the issue with all-day events (on multiple days) + freebusy
+
+2008-12-23  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * src/calendar/base/src/calDavCalendar.js
+	Added fix for https://bugzilla.mozilla.org/show_bug.cgi?id=470934
+
+2008-12-20  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calDavCalendar.js
+	We now remove the ctag op from the sync
+	queue when it failed to complete. See
+	https://bugzilla.mozilla.org/show_bug.cgi?id=463960#c4
+	for all details.
+
+2008-12-19  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Included the patch from bug ID
+	https://bugzilla.mozilla.org/show_bug.cgi?id=455260
+	Also finished the use of readOnly and disabled in
+	the whole calDavCalendar.js code
+	* Modified calDavCalendar.js: getProperty() to
+	handle ourself the imip.identity based on what
+	the CalDAV ACL manager has sent us.
+
+2008-12-17  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/content/sun-calendar-event-dialog.js
+	We now clone the organizer before setting the SENT-BY
+	* Bumped version number to 0.9.1pre11
+
+2008-12-10  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Improved ITIP support in calendar-item-editing.js
+	* Bumped version number to 0.9.1pre10
+
+2008-12-09  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calTransactionManager.js
+	Added a function to reset participation status
+	to "NEEDS-ACTION" when there is a SEQUENCE update.
+	* src/calendar/base/content/calendar-item-editing.js
+	Added more cruft around the ITIP stupidify of 0.9
+	to deal with recurrences.
+	* Added fix for bug
+	https://bugzilla.mozilla.org/show_bug.cgi?id=468723
+
+2008-12-08  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added src/patches/438964.diff (3rd patch
+	of the bug report) and applied it.
+	* We now correctly refresh our view when
+	ACLs have changed.
+
+2008-12-06  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Modified src/calendar/base/src/calDavCalendar.js
+	so implement a faster way of comparing items in order
+	to detect if some were deleted from the server. We
+	now use a hash table instead of an array.
+
+2008-12-04  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added the following files
+	src/calendar/lightning/content/imip-bar.js
+	src/patches/289038.diff
+	We now correctly handle if we are the owner
+	on the calendar in imip-bar.js
+	* Added a hack around bug
+	https://bugzilla.mozilla.org/show_bug.cgi?id=396182
+	in calendar-item-editing.js
+
+2008-12-03  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* We now correctly refresh ACLs when going online
+	and we refresh the view once they are loaded
+	* Fixed bug https://bugzilla.mozilla.org/show_bug.cgi?id=429126
+	* Replaced mReadOnly with readOnly in calDavCalendar.js
+	so we correctly mark the calendar as a read-only one
+	when there's a network error.
+	* Bumped version number to 0.9.1pre7
+	* Moved the SENT-BY so we can handle the case when
+	the calendar changes after having defined the attendees.
+
+2008-11-28  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* We now allow the creation of cached
+	calendar immediately. See:
+	See https://bugzilla.mozilla.org/show_bug.cgi?id=466686
+	for details
+        * Bumped version number to 0.9.1pre6
+
+2008-11-24  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Updated the code with regard to bug #463961
+	* Bumped version number to 0.9.1pre5
+
+2008-11-22  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added file src/patches/457854.diff
+	to backport this particular bugfix
+	* Added the calendar-fr.jar source files
+	in order to fix typos in the French translation
+	* Added src/calendar/base/content/widgets/minimonth.xml
+	so that we update the view wrt the selected day
+	See https://bugzilla.mozilla.org/show_bug.cgi?id=466979
+
+2008-11-20  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/src/calTransactionManager.js
+	We correctly handle the SEQUENCE increase upon
+	event modification
+
+2008-11-18  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * src/calendar/base/content/sun-calendar-event-dialog.js
+	 src/patches/464444.diff
+	 new files in order to fix the issue (bug #464444) where
+	 the last attendee wouldn't be notified when he was
+	 removed from the list of invited attendees
+	* Bumped the version number to 0.9.0pre3
+
+2008-11-16  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Improved the speed of the SAX handler in
+	calDavCalendar.js b avoiding calls to ensurePath()
+
+2008-11-14  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Added a Linux/64-bit Lightning build
+	* Changed the version number to 0.9.1pre2
+	* Fixed bug #463960
+
+2008-11-12  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Added src/patches/454543.diff for bug #454543
+	  Included the fix in the source code and
+	  slightly modified it (replaced let = with var=)
+
+2008-11-11  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Fixed bug #464344
+	* Added binaries/lightning/saxparser.xpt to the
+	  Lightning/win32 build in order to get a working
+	  SAX parser on this platform
+	* Changed the version number to 0.9.1pre1
+
+2008-11-10  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+        * Modified calDavCalendar.js
+	- added a fast etag parser
+	- re-implemented getInvitedAttendee so it takes
+	  into account all identities
+	- modified the delete method to proceed with the
+	  delete even with 404 error codes from the server
+	- added patch from bug #342934
+
+2008-11-10  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Initial import of Mozilla Calendar source and binaries.
+	The import is based on the last stable release for
+	Thunderbird 2 - which is 0.9.
+	* Generation of the initial set of patches in
+	  src/patches
