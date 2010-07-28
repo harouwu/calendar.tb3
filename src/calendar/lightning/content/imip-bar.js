@@ -46,12 +46,6 @@ Components.utils.import("resource://calendar/modules/calItipUtils.jsm");
  * This bar lives inside the message window.
  * Its lifetime is the lifetime of the main thunderbird message window.
  */
-var gItipItem;
-var gDelegateInfo;
-var gCalItemsArrayFound = [];
-
-var gIMIPCalendars;
-var gIdentities = null;
 
 function ltnGetMsgRecipient() {
     let msgHdr = gMessageDisplay.displayedMessage;
@@ -101,6 +95,7 @@ function ltnGetMsgRecipient() {
     var hdrParser = Components.classes["@mozilla.org/messenger/headerparser;1"]
                               .getService(Components.interfaces.nsIMsgHeaderParser);
     var emails = {};
+
     // First check the recipient list
     hdrParser.parseHeadersWithArray(msgHdr.recipients, emails, {}, {});
     for each (var recipient in emails.value) {
@@ -109,6 +104,7 @@ function ltnGetMsgRecipient() {
             return recipient;
         }
     }
+
     // Maybe we are in the CC list?
     hdrParser.parseHeadersWithArray(msgHdr.ccList, emails, {}, {});
     for each (var recipient in emails.value) {
@@ -166,23 +162,6 @@ const ltnOnItipItem = {
                 imipMethod = itipItem.receivedMethod;
             }
             cal.LOG("iTIP method: " + imipMethod);
-///////////////////////////////////
- try {
-        gItipItem = itipItem;
-
-        /* bug 396182 reveals itself here */
-        gItipItem.getItemList({});
-    } catch(e) {
-        gItipItem = null;
-        gCalItemsArrayFound = [];
-        gIMIPCalendars = null;
-        gIdentities = null;
-
-//         idump("an exception occured parsing itip item: " + e);
-        LOG("an exception occured parsing itip item: " + e);
-        return;
-    }
-    ////////////////////////
 
             let writableCalendars = getCalendarManager().getCalendars({}).filter(ltnIsSchedulingCalendar);
             if (writableCalendars.length > 0) {
@@ -193,14 +172,12 @@ const ltnOnItipItem = {
 
                 let imipBar = document.getElementById("imip-bar");
                 imipBar.setAttribute("collapsed", "false");
-                ////////////////////
-                 setupIMIPCalendars(imipMethod);
                 switch (itipItem.receivedMethod) {
                     case "REFRESH":
                         imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRefreshText"));
                         break;
                     case "REQUEST":
-                        processRequestMsg();
+                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRequestText"));
                         break;
                     case "PUBLISH":
                         imipBar.setAttribute("label", ltnGetString("lightning", "imipBarPublishText"));
@@ -348,7 +325,7 @@ function ltnItipOptions(itipItem, rc, actionFunc) {
         let button1 = document.getElementById("imip-button1");
         let button2 = document.getElementById("imip-button2");
         let button3 = document.getElementById("imip-button3");
-        cal.LOG("iTIP options on: " + actionFunc.method); //alert(actionFunc.method);
+        cal.LOG("iTIP options on: " + actionFunc.method);
         switch (actionFunc.method) {
             case "REPLY":
                 // fall-thru intended
@@ -368,7 +345,15 @@ function ltnItipOptions(itipItem, rc, actionFunc) {
                 imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUpdateText"));
                 // fall-thru intended
             case "REQUEST": {
-               processRequestMsg();
+                button1.setAttribute("label", ltnGetString("lightning", "imipAcceptInvitation.label"));
+                button1.setAttribute("oncommand", "return ltnExecAction('ACCEPTED');");
+                button2.setAttribute("label", ltnGetString("lightning", "imipDeclineInvitation.label"));
+                button2.setAttribute("oncommand", "return ltnExecAction('DECLINED');");
+                button3.setAttribute("label", ltnGetString("lightning", "imipAcceptTentativeInvitation.label"));
+                button3.setAttribute("oncommand", "return ltnExecAction('TENTATIVE');");
+                showElement(button1);
+                showElement(button2);
+                showElement(button3);
                 break;
             }
             case "CANCEL": {
@@ -428,306 +413,4 @@ function ltnGetTargetCalendar(itipItem) {
     }
 
     return calendarToReturn;
-}
-
-function imipOnLoad() {//alert("loaded");
-    var listener = {};
-    listener.onStartHeaders = onImipStartHeaders;
-    listener.onEndHeaders = onImipEndHeaders;
-    gMessageListeners.push(listener);
-
-    // Set up our observers
-    var observerSvc = Components.classes["@mozilla.org/observer-service;1"]
-                                .getService(Components.interfaces.nsIObserverService);
-    observerSvc.addObserver(onItipItem, "onItipItemCreation", false);
-}
-
-//new methods
-function allUserCalendars() {
-    var allCalendars = [];
-
-    var aclMgr;
-    try {
-        aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                           .getService(Components.interfaces.nsISupports)
-                           .wrappedJSObject;
-    } catch(e) {
-        aclMgr = null;
-    }
-    var mgr = getCalendarManager();
-    mgr.getCalendars({}).forEach(function(cal) {
-        checkAndIncludeIMIPCalendar(allCalendars, cal, aclMgr);
-    });
-
-    return allCalendars;
-}
-
-function checkAndIncludeIMIPCalendar(allCalendars, cal, aclMgr) {
-    if (isCalendarWritable(cal)) {
-        var aclMgrDone = false;
-        if (cal.type == "caldav") {
-            //                 idump("  uri: " + cal.uri.spec);
-            var entry = (aclMgr
-                         ? aclMgr.calendarEntry(cal.uri)
-                         : null);
-            var calIdentities;
-            if (entry && entry.isCalendarReady()) {
-                calIdentities = entry.ownerIdentities;
-                aclMgrDone = true;
-            }
-        }
-
-        if (!aclMgrDone) {
-            calIdentities = [];
-            var imipIdentity = cal.getProperty["imip.identity"];
-            if (imipIdentity) {
-                calIdentities.push(imipIdentity);
-            }
-        }
-        if (calIdentities.length > 0
-            && recipientMatchIdentities(calIdentities)) {
-            allCalendars.push(cal);
-        }
-    }
-}
-
-function setupMsgIdentities() {
-    if (!gIdentities) {
-        var acctmgr = Components.classes["@mozilla.org/messenger/account-manager;1"]
-                      .getService(Components.interfaces.nsIMsgAccountManager);
-        var msgHdr = gMessageDisplay.displayedMessage;
-        if (msgHdr.accountKey) {
-            // First, check if the message has an account key. If so, we can use the
-            // account identities to find the correct recipient
-            gIdentities = acctmgr.getAccount(msgHdr.accountKey).identities;
-        } else {
-            // Without an account key, we have to revert back to using the server
-            gIdentities = acctmgr.GetIdentitiesForServer(msgHdr.folder.server);
-        }
-    }
-}
-
-function recipientMatchIdentities(identities) {
-    setupMsgIdentities();
-    var matchIdentities = false;
-
-//     idump("recipientMatchIdentities");
-
-    for (var i = 0; !matchIdentities && i < gIdentities.Count(); i++) {
-        var testIdentity = gIdentities.GetElementAt(i)
-                           .QueryInterface(Components.interfaces.nsIMsgIdentity);
-//         idump("test identity: " + testIdentity.email);
-        for (var j = 0; !matchIdentities && j < identities.length; j++) {
-//             idump("  identity: " + identities[j].email);
-            matchIdentities = (identities[j].email == testIdentity.email);
-        }
-    }
-
-    return matchIdentities;
-}
-
-function processRequestMsg() {
-    // According to the specification, we have to determine if the event ID
-    // already exists on the calendar of the user - that means we have to search
-    // them all. :-(
-    var existingItemSequence = -1;
-
-//     idump("processRequestMsg");
-//     var compCal = createItipCompositeCalendar();
-
-    // Per iTIP spec (new Draft 4), multiple items in an iTIP message MUST have
-    // same ID, this simplifies our searching, we can just look for Item[0].id
-    var itemList = gItipItem.getItemList({ });
-    var newSequence = itemList[0].getProperty("SEQUENCE");
-
-    // Make sure we don't have a pre Outlook 2007 appointment, but if we do
-    // use Microsoft's Sequence number. I <3 MS
-    if ((newSequence == "0") &&
-        itemList[0].hasProperty("X-MICROSOFT-CDO-APPT-SEQUENCE")) {
-        newSequence = itemList[0].getProperty("X-MICROSOFT-CDO-APPT-SEQUENCE");
-    }
-
-    var onFindItemListener = {
-        onOperationComplete:
-        function ooc(aCalendar, aStatus, aOperationType, aId, aDetail) {
-//             idump("onOperationComplete");
-        },
-
-        onGetResult:
-        function ogr(aCalendar, aStatus, aItemType, aDetail, aCount, aItems) {
-//             idump("onGetResult");
-            if (aCount && aItems[0] && !this.processedId) {
-                this.processedId = true;
-                var existingSequence = aItems[0].getProperty("SEQUENCE");
-
-                // Handle the microsoftism foolishness
-                if ((existingSequence == "0") &&
-                    itemList[0].hasProperty("X-MICROSOFT-CDO-APPT-SEQUENCE")) {
-                    existingSequence = aItems[0].getProperty("X-MICROSOFT-CDO-APPT-SEQUENCE");
-                }
-
-                if (aCalendar.getProperty("itip.disableRevisionChecks")) {
-                    displayRequestMethod(1, 0); // force to be an update
-                } else {
-                    displayRequestMethod(newSequence, existingSequence);
-                }
-            }
-        }
-    };
-
-    if (gIMIPCalendars.length > 0) {
-        // Search
-        for each (var cal in gIMIPCalendars) {
-            cal.getItem(itemList[0].id, onFindItemListener);
-        }
-        if (!onFindItemListener.processedId) {
-            displayRequestMethod(newSequence, -1);
-        }
-    } else {
-        displayRequestMethod(0, 1);
-    }
-}
-
-function displayRequestMethod(newItemSequence, existingItemSequence) {
-//     idump("displayRequestMethod (" + newItemSequence
-//           + ", " + existingItemSequence + ")");
-//     idump(STACK(50));
-    // Three states here:
-    // 0 = the new event does not exist on the calendar (therefore, this is an add)
-    //     (Item does not exist yet: existingItemSequence == -1)
-    // 1 = the event does exist and contains a proper update (this is an update)
-    //     (Item has been updated: newSequence > existingSequence)
-    // 2 = the event clicked on is an old update and should NOT be applied
-    //     (Item is an old message that has already been added/updated: new <= existing)
-    var updateValue = 0;
-
-    if (existingItemSequence == -1) {
-        updateValue = 0;
-    } else if (newItemSequence > existingItemSequence) {
-        updateValue = 1;
-    } else {
-        updateValue = 2;
-    }
-
-//     idump("updateValue: " + updateValue );
-    // now display the proper message for this update type:
-
-    var imipBar = document.getElementById("imip-bar");
-    if (updateValue) {
-        // This is a message updating existing event(s). But updateValue could
-        // indicate that this update has already been applied, check that first.
-        if (updateValue == 2) {
-            // This case, they clicked on an old message that has already been
-            // added/updated, we want to tell them that.
-            imipBar.setAttribute("label", ltnGetString("lightning", "imipBarAlreadyAddedText"));
-
-            hideElement("imip-button1");
-            hideElement("imip-button2");
-            hideElement("imip-button3");
-            hideElement("imip-button4");
-        } else {
-            // Legitimate update, let's offer the update path
-            imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUpdateText"));
-
-            var button = document.getElementById("imip-button1");
-            showElement(button);
-            button.setAttribute("label", ltnGetString("lightning", "imipUpdateInvitation.label"));
-            button.setAttribute("oncommand", "setAttendeeResponse('ACCEPTED', 'CONFIRMED');");
-
-            // Create a DECLINE button (user chooses not to attend the updated event)
-            button = document.getElementById("imip-button2");
-            showElement(button);
-            button.setAttribute("label", ltnGetString("lightning", "imipDeclineInvitation.label"));
-            button.setAttribute("oncommand", "setAttendeeResponse('DECLINED', 'CONFIRMED');");
-
-            // Create a ACCEPT TENTATIVE button
-            button = document.getElementById("imip-button3");
-            showElement(button);
-            button.setAttribute("label", ltnGetString("lightning", "imipAcceptTentativeInvitation.label"));
-            button.setAttribute("oncommand", "setAttendeeResponse('TENTATIVE', 'CONFIRMED');");
-
-            // Create a DELEGATE button
-            button = document.getElementById("imip-button4");
-            showElement(button);
-            button.setAttribute("label", ltnGetString("lightning", "imipDelegateInvitation.label"));
-            button.setAttribute("oncommand", "setAttendeeResponse('DELEGATED', 'CONFIRMED');");
-        }
-    } else {
-        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRequestText"));
-
-        var button = document.getElementById("imip-button1");
-        showElement(button);
-        button.setAttribute("label", ltnGetString("lightning", "imipAcceptInvitation.label"));
-        button.setAttribute("oncommand", "setAttendeeResponse('ACCEPTED', 'CONFIRMED');");
-
-        // Create a DECLINE button
-        button = document.getElementById("imip-button2");
-        showElement(button);
-        button.setAttribute("label", ltnGetString("lightning", "imipDeclineInvitation.label"));
-        button.setAttribute("oncommand", "setAttendeeResponse('DECLINED', 'CONFIRMED');");
-
-        // Create a ACCEPT TENTATIVE button
-        button = document.getElementById("imip-button3");
-        showElement(button);
-        button.setAttribute("label", ltnGetString("lightning", "imipAcceptTentativeInvitation.label"));
-        button.setAttribute("oncommand", "setAttendeeResponse('TENTATIVE', 'CONFIRMED');");
-
-        // Create a DELEGATE button
-        button = document.getElementById("imip-button4");
-        showElement(button);
-        button.setAttribute("label", ltnGetString("lightning", "imipDelegateInvitation.label"));
-        button.setAttribute("oncommand", "setAttendeeResponse('DELEGATED', 'CONFIRMED');");
-    }
-}
-
-function setupIMIPCalendars(imipMethod) {
-    var allCalendars = allUserCalendars();
-    if (allCalendars.length) {
-        var foundTuple = findItipItemCalendar(allCalendars);
-        if (foundTuple) {
-//             idump("tuple found");
-            refreshCalendars([foundTuple[0]],
-                             refreshItemCalendarCallback,
-                             {item: foundTuple[1], method: imipMethod});
-        } else {
-//             idump("tuple not found");
-            refreshCalendars(allCalendars,
-                             refreshAllCalendarsCallback, imipMethod);
-        }
-    } else {
-        gIMIPCalendars = allCalendars;
-        return;
-    }
-}
-
-function refreshCalendars(calendars, callback, data) {
-    var refreshObserver = new imipBarRefreshObserver(calendars,
-                                                     callback,
-                                                     data);
-    for each (var cal in calendars) {
-        cal.addObserver(refreshObserver);
-        if (cal.type == "caldav") {
-//             idump("refresh requested on " + cal.name);
-            cal.refresh();
-        } else {
-//             idump("refresh not needed for " + cal.name);
-            refreshObserver.onLoad(cal);
-        }
-    }
-}
-
-function imipBarRefreshObserver(calendars, callback, data) {
-//     idump("imipBarRefreshObserver");
-    this.callback = callback;
-    this.data = data;
-    this.pendingRefresh = calendars.length;
-
-//     idump("  count: " + calendars.length);
-
-    this.allCalendars = calendars;
-    this.calendars = {};
-    for each (var cal in calendars) {
-//         idump("  added " + cal.uri.spec);
-        this.calendars[cal.uri.spec] = true;
-    }
 }
