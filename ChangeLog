@@ -1,3 +1,8 @@
+2010-07-28  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calUtils.js: (calGetString): return the
+	original string when the translation has not been found.
+
 2010-07-27  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/lightning/content/imip-bar.js: (setupMsgIdentities)
