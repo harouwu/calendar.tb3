@@ -2815,20 +2815,22 @@ function updateAttendees() {
         var regexp = new RegExp("^mailto:(.*)", "i");
         for (var i = 0; i < numAttendees; i++) {
             var attendee = window.attendees[i];
-            if (attendee.commonName && attendee.commonName.length) {
-                attendeeNames += attendee.commonName;
-            } else if (attendee.id && attendee.id.length) {
-                var email = attendee.id;
-                if (regexp.test(email)) {
-                    attendeeNames += RegExp.$1;
+            if (attendee.participationStatus != "DELEGATED") {
+                if (attendee.commonName && attendee.commonName.length) {
+                    attendeeNames += attendee.commonName;
+                } else if (attendee.id && attendee.id.length) {
+                    var email = attendee.id;
+                    if (regexp.test(email)) {
+                        attendeeNames += RegExp.$1;
+                    } else {
+                        attendeeNames += email;
+                    }
                 } else {
-                    attendeeNames += email;
+                    continue;
                 }
-            } else {
-                continue;
-            }
-            if (i + 1 < numAttendees) {
-                attendeeNames += ', ';
+                if (i + 1 < numAttendees) {
+                    attendeeNames += ', ';
+                }
             }
         }
         var attendeeList = document.getElementById("attendee-list");
@@ -2927,7 +2929,7 @@ function showAttendeePopup(event) {
 
     // anonymous helper function to
     // initialize a dynamically created menuitem
-    function setup_node(aNode, aAttendee) {
+    function setup_node(aNode, aAttendee, isDelegate) {
         // Count attendees that have done something.
         if (!isAttendeeUndecided(aAttendee)) {
             responsiveAttendees++;
@@ -2957,6 +2959,9 @@ function showAttendeePopup(event) {
         }
         aNode.setAttribute("label", name);
         aNode.setAttribute("status", aAttendee.participationStatus);
+        if (isDelegate) {
+            aNode.setAttribute("delegate", "true");
+        }
         aNode.attendee = aAttendee;
     }
 
@@ -2967,7 +2972,7 @@ function showAttendeePopup(event) {
     var separator = document.getElementById("attendee-popup-separator");
     var template = separator.nextSibling;
 
-    setup_node(template, attendees[0]);
+    // setup_node(template, attendees[0]);
 
     // Remove all remaining menu items after the separator and the template menu
     // item.
@@ -2976,12 +2981,30 @@ function showAttendeePopup(event) {
     }
 
     // Add the rest of the attendees.
-    for (var i = 1; i < attendees.length; i++) {
+    for (var i = 0; i < attendees.length; i++) {
         var attendee = attendees[i];
-        var newNode = template.cloneNode(true);
-        setup_node(newNode, attendee);
-        popup.appendChild(newNode);
+        var delegatedTo = attendee.getProperty("DELEGATED-TO");
+        if (delegatedTo && delegatedTo.length == 0) {
+            delegatedTo = null;
+        }
+        var delegatedFrom = attendee.getProperty("DELEGATED-FROM");
+        if (delegatedFrom && delegatedFrom.length == 0) {
+            delegatedFrom = null;
+        }
+        // dump("attendee:  " + attendee.id + "; from: " + delegatedFrom + "; to: " + delegatedTo + "\n");
+        if (!delegatedFrom || delegatedTo) {
+            var newNode = template.cloneNode(true);
+            setup_node(newNode, attendee);
+            popup.appendChild(newNode);
+        }
+        if (delegatedTo) {
+            var delegate = window.arguments[0].calendarEvent.getAttendeeById(delegatedTo);
+            var newNode = template.cloneNode(true);
+            setup_node(newNode, delegate, true);
+            popup.appendChild(newNode);
+        }
     }
+    popup.removeChild(template);
 
     // Set up the unanswered attendees item.
     if (responsiveAttendees == attendees.length) {

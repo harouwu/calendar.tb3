@@ -185,6 +185,59 @@ cal.itip = {
     },
 
     /**
+     * (helper for delegation in checkAndSend)
+     * retrieve the chain of delegates/delegators
+     */
+    _findDelegationAttendees: function
+    cal_itip__findDelegationAttendees(aItem, delegationQualifier, delegate) {
+        let attendees = [];
+
+        // dump("qualifier: " + delegationQualifier + "\n");
+        let currentAttendee = aItem.getAttendeeById(delegate.id);
+        while (currentAttendee) {
+            let attendeeId = currentAttendee.getProperty(delegationQualifier);
+            if (attendeeId && attendeeId.length > 0) {
+                currentAttendee = aItem.getAttendeeById(attendeeId);
+                if (currentAttendee) {
+                    // dump("  current delegate/delegator: " + currentAttendee.id + "\n");
+                    attendees.push(currentAttendee);
+                } else {
+                    dump("  ** not found: " + attendeeId + "\n");
+                }
+            } else {
+                currentAttendee = null;
+            }
+        }
+
+        return attendees;
+    },
+
+    /**
+     * helper for delegation in checkAndSendItipItems
+     */
+    _makeDelegateItem: function cal_itip__makeDelegateItem(aItem, method, attendee, otherAttendees) {
+        let delegateItem = aItem.clone();
+        if (method != "REPLY"
+            && (delegateItem.organizer.id.toLowerCase()
+                != attendee.id.toLowerCase())) {
+            delegateItem.organizer.setProperty("SENT-BY", attendee.id);
+        }
+        delegateItem.removeAllAttendees();
+        for each (let otherAttendee in otherAttendees) {
+            delegateItem.addAttendee(otherAttendee);
+        }
+        delegateItem.addAttendee(attendee);
+
+        // let itipItem = Components.classes["@mozilla.org/calendar/itip-item;1"]
+        //                          .createInstance(Components.interfaces.calIItipItem);
+        // itipItem.init(calGetSerializedItem(delegateItem));
+        // itipItem.targetCalendar = aItem.calendar;
+        // itipItem.autoResponse = Components.interfaces.calIItipItem.USER;
+
+        return delegateItem;
+    },
+
+    /**
      * Scope: iTIP message sender
      *
      * Checks to see if e.g. attendees were added/removed or an item has been
@@ -241,6 +294,31 @@ cal.itip = {
                                 aItem.calendar.isInvitation(aItem))
                                ? aItem.calendar.getInvitedAttendee(aItem) : null);
         if (invitedAttendee) { // actually is an invitation copy, fix attendee list to send REPLY
+            /* ACL Code:
+             * Much like in calendar-event-dialog-attendees.xml (onInitialize)
+             * we have to check if the attendee is equal to the
+             * calendar-user-address-set. If they aren't equal, it means that
+             * someone is accepting invitations on behalf of an other user. */
+            if (aItem.calendar.type == "caldav") {
+                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                       .getService(Components.interfaces.nsISupports)
+                                       .wrappedJSObject;
+
+                let entry = aclMgr.calendarEntry(aItem.calendar.uri);
+                let found = false;
+                for (let i = 0; !found && i < entry.userAddresses.length; i++) {
+                    let identity = entry.userAddresses[i].toLowerCase();
+                    if (invitedAttendee.id.toLowerCase() == identity) {
+                        found = true;
+                    }
+                }
+
+                if (!found && entry.userAddresses.length > 0) {
+                    invitedAttendee.setProperty("SENT-BY", entry.userAddresses[0]);
+                }
+            }
+            /* /ACL Code */
+
             if (aItem.organizer) {
                 let origInvitedAttendee = (aOriginalItem && aOriginalItem.getAttendeeById(invitedAttendee.id));
 
@@ -251,6 +329,35 @@ cal.itip = {
                     invitedAttendee.participationStatus = "DECLINED";
                 }
 
+                let delegators = this._findDelegationAttendees(aItem,
+                                                               "DELEGATED-FROM",
+                                                               invitedAttendee);
+
+                // dump("\noriginal ICS:\n" + serializedItem(aOriginalItem) + "\n\n");
+                // dump("\nnew      ICS:\n" + serializedItem(aItem) + "\n\n");
+
+                let newDelegates = this._findDelegationAttendees(aItem, "DELEGATED-TO",
+                                                                 invitedAttendee);
+                // dump("new delegates: " + newDelegates.join(", ") + "\n");
+
+                let oldDelegates = null;
+                if (aOriginalItem) {
+                    let oldAttendee
+                        = aOriginalItem.getAttendeeById(invitedAttendee.id);
+                    if (oldAttendee
+                        && oldAttendee.participationStatus == "DELEGATED") {
+                        oldDelegates = this._findDelegationAttendees(aOriginalItem,
+                                                                     "DELEGATED-TO",
+                                                                     invitedAttendee);
+                        // dump("old delegates: " + oldDelegates.join(", ") + "\n");
+                        // dump("oldDelegates queried\n");
+                    } else {
+                        // dump("oldAttendee not delegated\n");
+                    }
+                } else {
+                    dump("no original item\n");
+                }
+
                 // We want to send a REPLY send if:
                 // - there has been a PARTSTAT change
                 // - in case of an organizer SEQUENCE bump we'd go and reconfirm our PARTSTAT
@@ -259,8 +366,70 @@ cal.itip = {
                     (aOriginalItem && (cal.itip.getSequence(aItem) != cal.itip.getSequence(aOriginalItem)))) {
                     aItem = aItem.clone();
                     aItem.removeAllAttendees();
+                    for (let i = 0; i < delegators.length; i++) {
+                        aItem.addAttendee(delegators[i]);
+                    }
                     aItem.addAttendee(invitedAttendee);
-                    sendMessage(aItem, "REPLY", [aItem.organizer], autoResponse);
+                    if (invitedAttendee.participationStatus == "DELEGATED") {
+                        for (let i = 0; i < newDelegates.length; i++) {
+                            aItem.addAttendee(newDelegates[i]);
+                        }
+                    }
+
+                    sendMessage(aItem, "REPLY", [aItem.organizer].concat(delegators), autoResponse);
+
+                    let requestDelegates = [];
+                    let cancelDelegates = [];
+                    if (oldDelegates && oldDelegates.length > 0) {
+                        let newDelegateIds = {};
+                        for (let i = 0; i < newDelegates.length; i++) {
+                            let newDelegateId = newDelegates[i].id.toLowerCase();
+                            newDelegateIds[newDelegateId] = newDelegates[i];
+                        }
+
+                        let oldDelegateIds = {};
+                        for (let i = 0; i < oldDelegates.length; i++) {
+                            let oldDelegate = oldDelegates[i];
+                            let oldDelegateId = oldDelegate.id.toLowerCase();
+                            oldDelegateIds[oldDelegateId] = oldDelegate;
+                            if (newDelegateIds[oldDelegateId]) {
+                                if (newDelegates[oldDelegateId].participationStatus
+                                    != oldDelegate.participationStatus
+                                    && (newDelegates[oldDelegateId].participationStatus
+                                        == "NEEDS-ACTION")) {
+                                    requestDelegates.push(newDelegates[oldDelegateId]);
+                                }
+                            } else {
+                                // dump("append old delegate: " + oldDelegate + "\n");
+                                cancelDelegates.push(oldDelegate);
+                            }
+                        }
+
+                        for (let i = 0; i < newDelegates.length; i++) {
+                            let newDelegate = newDelegates[i];
+                            let newDelegateId = newDelegate.id.toLowerCase();
+                            if (!oldDelegateIds[newDelegateId]) {
+                                requestDelegates.push(newDelegate);
+                            }
+                        }
+                    } else {
+                        requestDelegates = newDelegates;
+                    }
+
+                    // dump("request delegates: " + requestDelegates.join(", ") + "\n");
+                    // dump("cancel delegates: " + cancelDelegates.join(", ") + "\n");
+                    if (requestDelegates.length > 0) {
+                        let requestItipItem = this._makeDelegateItem(aItem, "REQUEST",
+                                                                     invitedAttendee,
+                                                                     delegators.concat(requestDelegates));
+                        sendMessage(requestItipItem, "REQUEST", delegators.concat(requestDelegates), autoResponse);
+                    }
+                    if (cancelDelegates.length > 0) {
+                        let cancelItipItem = this._makeDelegateItem(aOriginalItem, "CANCEL",
+                                                                    invitedAttendee,
+                                                                    delegators.concat(cancelDelegates));
+                        sendMessage(cancelItipItem, "CANCEL", cancelDelegates, autoResponse);
+                    }
                 }
             }
 

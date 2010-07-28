@@ -132,7 +132,7 @@
             <label value="&newevent.status.completed.label;" hidden="true" status="COMPLETED"/>
           </row>
           <separator id="item-main-separator" flex="1" class="groove" hidden="true"/>
-          <row id="invitation-row" hidden="true" align="center">
+          <row id="invitation-row" hidden="true" align="top">
             <label value="&read.only.reply.label;" control="item-participation"/>
             <vbox pack="start">
               <menulist id="item-participation" oncommand="updateInvitation()">
@@ -276,13 +276,8 @@
       <listbox id="item-attendee-listbox" rows="6" flex="1" disabled="true">
         <listcols>
           <listcol flex="1"/>
-          <listcol flex="1"/>
         </listcols>
         <listitem>
-          <listcell>
-            <image class="status-icon" hidden="true"/>
-            <label/>
-          </listcell>
           <listcell>
             <image class="status-icon" hidden="true"/>
             <label/>

@@ -618,6 +618,21 @@ daypicker-monthday {
     -moz-image-region: rect(14px 48px 28px 36px);
 }
 
+.status-icon[status="DELEGATED"] {
+    margin: 0 3px;
+    list-style-image: url("chrome://calendar/skin/status-delegated.png");
+    -moz-image-region: rect(0px 12px 12px 0px);
+}
+.status-icon[status="DELEGATED"][disabled="true"] {
+    margin: 0 3px;
+    list-style-image: url("chrome://calendar/skin/status-delegated.png");
+    -moz-image-region: rect(0px 12px 12px 0px);
+}
+
+.status-icon[delegate="true"] {
+    padding: 0 6px;
+}
+
 .role-icon {
     margin: 0 3px;
     list-style-image: url(chrome://calendar/skin/calendar-event-dialog-attendees.png);
