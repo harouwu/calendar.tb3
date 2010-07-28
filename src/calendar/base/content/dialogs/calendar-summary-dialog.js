@@ -525,7 +525,7 @@ function updateAttendees() {
                             delegatorLabel += delegator.toString();
                         }
                     } else {
-                        delegatorLabel += " unspecified attendee (bug)";
+                        delegatorLabel += " (bug) attendee not found: " + delegatedFrom;
                     }
                     label.value += ", " + delegatorLabel;
                 }
