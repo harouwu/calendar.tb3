@@ -2,6 +2,17 @@
 
 	* src/calendar/lightning/content/imip-bar.js: reverted to the
 	original version of the file.
+	(ltnOnItipItem.observe): split the method: the button display code
+	has been put in a callback to a multiple refresh operation,
+	implemented by the new class below.
+	(refreshCalendars): new method requesting the refresh of the array
+	of calendars passed as parameter, using the new class below.
+	(imipBarRefreshObserver): new class acting as a calendar observer
+	for processing a single callback after all calendars in question
+	have been refreshed.
+	(ltnOnCalendarsRefreshed): new callback, mentionned above, which
+	takes in charge the displaying of corresponding buttons and
+	requesting the itip processing of the item.
 
 	* src/calendar/base/src/calUtils.js: (calGetString): return the
 	original string when the translation has not been found.

@@ -124,6 +124,64 @@ function ltnIsSchedulingCalendar(cal) {
             cal.getProperty("itip.transport"));
 }
 
+function imipBarRefreshObserver(calendars, callback, data) {
+    dump("imip-bar.js: imipBarRefreshObserver\n");
+    this.callback = callback;
+    this.data = data;
+    this.pendingRefresh = calendars.length;
+
+    dump("imip-bar.js:   count: " + calendars.length + "\n");
+
+    this.allCalendars = calendars;
+    this.calendars = {};
+    for each (var cal in calendars) {
+        dump("imip-bar.js:   added " + cal.uri.spec + "\n");
+        this.calendars[cal.uri.spec] = true;
+    }
+}
+
+imipBarRefreshObserver.prototype = {
+    onLoad: function(aCalendar) {
+        dump("imip-bar.js: imipBarRefreshObserver: onLoad for " + aCalendar.name + "\n");
+        var uri = aCalendar.uri.spec;
+        if (this.calendars[uri]) {
+            delete this.calendars[uri];
+            aCalendar.removeObserver(this);
+            this.pendingRefresh--;
+            dump("imip-bar.js:   refresh done on " + aCalendar.name + "\n");
+            if (this.pendingRefresh == 0) {
+                dump("imip-bar.js:   all refresh done\n");
+                this.callback(this.allCalendars, this.data);
+            }
+        }
+    },
+
+    onStartBatch: function() {},
+    onEndBatch: function() {},
+    onAddItem: function(aItem) {},
+    onModifyItem: function(aNewItem, aOldItem) {},
+    onDeleteItem: function(aDeletedItem) {},
+    onError: function(aCalendar, aErrNo, aMessage) {},
+    onPropertyChanged: function(aCalendar, aName, aValue, aOldValue) {},
+    onPropertyDeleting: function(aCalendar, aName) {}
+};
+
+function refreshCalendars(calendars, callback, data) {
+    var refreshObserver = new imipBarRefreshObserver(calendars,
+                                                     callback,
+                                                     data);
+    for each (var cal in calendars) {
+        cal.addObserver(refreshObserver);
+        if (cal.type == "caldav") {
+            dump("imip-bar.js: refresh requested on " + cal.name + "\n");
+            cal.refresh();
+        } else {
+            dump("imip-bar.js: refresh not needed for " + cal.name + "\n");
+            refreshObserver.onLoad(cal);
+        }
+    }
+}
+
 const ltnOnItipItem = {
     observe: function ltnOnItipItem_observe(subject, topic, state) {
         if (topic == "onItipItemCreation") {
@@ -170,37 +228,41 @@ const ltnOnItipItem = {
                 writableCalendars.forEach(compCal.addCalendar, compCal);
                 itipItem.targetCalendar = compCal;
 
-                let imipBar = document.getElementById("imip-bar");
-                imipBar.setAttribute("collapsed", "false");
-                switch (itipItem.receivedMethod) {
-                    case "REFRESH":
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRefreshText"));
-                        break;
-                    case "REQUEST":
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRequestText"));
-                        break;
-                    case "PUBLISH":
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarPublishText"));
-                        break;
-                    case "CANCEL":
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarCancelText"));
-                        break;
-                    case "REPLY":
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarReplyText"));
-                        break;
-                    default:
-                        // Bug xxxx TBD: Something went wrong or we found a message we don't
-                        // support yet. We can show a "This method is not supported in this
-                        // version" or simply hide the iMIP bar at this point
-                        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUnsupportedText"));
-                        cal.ERROR("Unknown iTIP method: " + itipItem.receivedMethod);
-                        return;
-                }
-                cal.itip.processItipItem(itipItem, ltnItipOptions);
+                refreshCalendars(writableCalendars, ltnOnCalendarsRefreshed, itipItem);
             }
         }
     }
 };
+
+function ltnOnCalendarsRefreshed(writableCalendars, itipItem) {
+    let imipBar = document.getElementById("imip-bar");
+    imipBar.setAttribute("collapsed", "false");
+    switch (itipItem.receivedMethod) {
+    case "REFRESH":
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRefreshText"));
+        break;
+    case "REQUEST":
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarRequestText"));
+        break;
+    case "PUBLISH":
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarPublishText"));
+        break;
+    case "CANCEL":
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarCancelText"));
+        break;
+    case "REPLY":
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarReplyText"));
+        break;
+    default:
+        // Bug xxxx TBD: Something went wrong or we found a message we don't
+        // support yet. We can show a "This method is not supported in this
+        // version" or simply hide the iMIP bar at this point
+        imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUnsupportedText"));
+        cal.ERROR("Unknown iTIP method: " + itipItem.receivedMethod);
+        return;
+    }
+    cal.itip.processItipItem(itipItem, ltnItipOptions);
+}
 
 /**
  * Add self to gMessageListeners defined in msgHdrViewOverlay.js
