@@ -597,6 +597,14 @@ calStorageCalendar.prototype = {
     //                in calIOperationListener aListener );
     getItems: function cSC_getItems(aItemFilter, aCount,
                                     aRangeStart, aRangeEnd, aListener) {
+        let this_ = this;
+        cal.postPone(function() {
+                         this_.getItems_(aItemFilter, aCount, aRangeStart, aRangeEnd, aListener);
+                     });
+    },
+    getItems_: function cSC_getItems_(aItemFilter, aCount,
+                                      aRangeStart, aRangeEnd, aListener)
+    {
         //var profStartTime = Date.now();
         if (!aListener)
             return;
@@ -2203,13 +2211,6 @@ calStorageCalendar.prototype = {
         } else {
             this.mDB.commitTransaction();
         }
-    },
-
-    startBatch: function cSC_startBatch() {
-        this.__proto__.__proto__.startBatch.apply(this, arguments);
-    },
-    endBatch: function cSC_endBatch() {
-        this.__proto__.__proto__.endBatch.apply(this, arguments);
     },
 
     //

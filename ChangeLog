@@ -7,8 +7,10 @@
 	this method a simple wrapper for "this.mDB.beginTransaction".
 	(releaseTransaction): same as the above with the exception that a
 	rollback is still performed when an error is passed as parameter.
-	(startBatch): no longer acquire a transaction.
-	(endBatch): no longer release the current transaction.
+	(startBatch): no longer acquire a transaction, therefore removed
+	method.
+	(endBatch): no longer release the current transaction, therefore
+	removed method.
 
 2010-07-28  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
