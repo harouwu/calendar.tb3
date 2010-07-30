@@ -1,3 +1,15 @@
+2010-07-30  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/storage/calStorageCalendar.js:
+	(calStorageCalendar.flushItem): since deleteItemById creates a
+	transaction, we cannot create one before the method is invoked.
+	(acquireTransaction): removed transaction counters, thereby making
+	this method a simple wrapper for "this.mDB.beginTransaction".
+	(releaseTransaction): same as the above with the exception that a
+	rollback is still performed when an error is passed as parameter.
+	(startBatch): no longer acquire a transaction.
+	(endBatch): no longer release the current transaction.
+
 2010-07-28  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/lightning/content/imip-bar.js: reverted to the

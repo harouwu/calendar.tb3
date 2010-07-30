@@ -53,9 +53,6 @@ Components.utils.import("resource://calendar/modules/calStorageHelpers.jsm");
 const USECS_PER_SECOND = 1000000;
 const kCalICalendar = Components.interfaces.calICalendar;
 
-var gTransCount = {};
-var gTransErr = {};
-
 //
 // calStorageCalendar
 //
@@ -80,7 +77,7 @@ calStorageCalendar.prototype = {
 
     //
     // nsISupports interface
-    // 
+    //
     QueryInterface: function (aIID) {
         return doQueryInterface(this, calStorageCalendar.prototype, aIID,
                                 [Components.interfaces.calICalendarProvider,
@@ -549,7 +546,7 @@ calStorageCalendar.prototype = {
                                      aItem.id,
                                      aItem);
 
-        // notify observers 
+        // notify observers
         this.observers.notify("onDeleteItem", [aItem]);
     },
 
@@ -595,19 +592,11 @@ calStorageCalendar.prototype = {
                                      null);
     },
 
-    // void getItems( in unsigned long aItemFilter, in unsigned long aCount, 
+    // void getItems( in unsigned long aItemFilter, in unsigned long aCount,
     //                in calIDateTime aRangeStart, in calIDateTime aRangeEnd,
     //                in calIOperationListener aListener );
     getItems: function cSC_getItems(aItemFilter, aCount,
                                     aRangeStart, aRangeEnd, aListener) {
-        let this_ = this;
-        cal.postPone(function() {
-                this_.getItems_(aItemFilter, aCount, aRangeStart, aRangeEnd, aListener);
-            });
-    },
-    getItems_: function cSC_getItems_(aItemFilter, aCount,
-                                      aRangeStart, aRangeEnd, aListener)
-    {
         //var profStartTime = Date.now();
         if (!aListener)
             return;
@@ -873,7 +862,7 @@ calStorageCalendar.prototype = {
         //           (event_end = :range_start AND
         //           event_start = :range_start))
         //          AND event_start < :range_end)
-        //         
+        //
         // but that doesn't work with floating start or end times. The logic
         // is the same though.
         // For readability, a few helpers:
@@ -901,7 +890,7 @@ calStorageCalendar.prototype = {
         * WHERE (due > rangeStart AND start < rangeEnd) OR
         *       (due = rangeStart AND start = rangeStart) OR
         *       (due IS NULL AND ((start >= rangeStart AND start < rangeEnd) OR
-        *                         (start IS NULL AND 
+        *                         (start IS NULL AND
         *                          (completed > rangeStart OR completed IS NULL))) OR
         *       (start IS NULL AND due >= rangeStart AND due < rangeEnd)
         */
@@ -1113,14 +1102,14 @@ calStorageCalendar.prototype = {
 
         this.mInsertAttachment = createStatement (
             this.mDB,
-            "INSERT INTO cal_attachments " + 
+            "INSERT INTO cal_attachments " +
             " (cal_id, item_id, data, format_type, encoding, recurrence_id, recurrence_id_tz) " +
             "VALUES (:cal_id, :item_id, :data, :format_type, :encoding, :recurrence_id, :recurrence_id_tz)"
             );
 
         this.mInsertRelation = createStatement (
             this.mDB,
-            "INSERT INTO cal_relations " + 
+            "INSERT INTO cal_relations " +
             " (cal_id, item_id, rel_type, rel_id, recurrence_id, recurrence_id_tz) " +
             "VALUES (:cal_id, :item_id, :rel_type, :rel_id, :recurrence_id, :recurrence_id_tz)"
             );
@@ -1385,7 +1374,7 @@ calStorageCalendar.prototype = {
 
     // We used to use mDBTwo for this, so this can be run while a
     // select is executing but this no longer seems to be required.
-    
+
     getAdditionalDataForItem: function cSC_getAdditionalDataForItem(item, flags) {
         // This is needed to keep the modification time intact.
         var savedLastModifiedTime = item.lastModifiedTime;
@@ -1429,10 +1418,10 @@ calStorageCalendar.prototype = {
                 selectItem = this.mSelectPropertiesForItemWithRecurrenceId;
                 this.setDateParamHelper(selectItem.params, "recurrence_id", item.recurrenceId);
             }
-                
+
             this.prepareStatement(selectItem);
             selectItem.params.item_id = item.id;
-            
+
             try {
                 while (selectItem.step()) {
                     row = selectItem.row;
@@ -1661,7 +1650,7 @@ calStorageCalendar.prototype = {
 
             selectAlarm.params.item_id = item.id;
             this.prepareStatement(selectAlarm);
-            try { 
+            try {
                 while (selectAlarm.step()) {
                     let row = selectAlarm.row;
                     let alarm = cal.createAlarm();
@@ -1712,12 +1701,12 @@ calStorageCalendar.prototype = {
 
     getAttachmentFromRow: function cSC_getAttachmentFromRow(row) {
         let a = cal.createAttachment();
-       
+
         // TODO we don't support binary data here, libical doesn't either.
         a.uri = makeURL(row.data);
         a.formatType = row.format_type;
         a.encoding = row.encoding;
-    
+
         return a;
     },
 
@@ -1799,9 +1788,9 @@ calStorageCalendar.prototype = {
     flushItem: function cSC_flushItem(item, olditem) {
         ASSERT(!item.recurrenceId, "no parent item passed!", true);
 
-        this.acquireTransaction();
         try {
             this.deleteItemById(olditem ? olditem.id : item.id);
+            this.acquireTransaction();
             this.writeItem(item, olditem);
         } catch (e) {
             this.releaseTransaction(e);
@@ -2134,7 +2123,7 @@ calStorageCalendar.prototype = {
             return CAL_ITEM_FLAG.HAS_RELATIONS;
         }
         return 0;
-    },          
+    },
 
     writeAlarms: function cSC_writeAlarms(item, olditem) {
         let alarms = item.getAlarms({});
@@ -2196,13 +2185,7 @@ calStorageCalendar.prototype = {
      * existing transaction.
      */
     acquireTransaction: function cSC_acquireTransaction() {
-        let calId = this.id;
-        if (!(calId in gTransCount)) {
-            gTransCount[calId] = 0;
-        }
-        if (gTransCount[calId]++ == 0) {
-            this.mDB.beginTransaction();
-        }
+        this.mDB.beginTransaction();
     },
 
     /**
@@ -2215,32 +2198,17 @@ calStorageCalendar.prototype = {
      *                    the count reaches zero.
      */
     releaseTransaction: function cSC_releaseTransaction(err) {
-        let calId = this.id;
         if (err) {
-            cal.ERROR("DB error: " + this.mDB.lastErrorString + "\nexc: " + err);
-            gTransErr[calId] = err;
-        }
-
-        if (gTransCount[calId] > 0) {
-            if (--gTransCount[calId] == 0) {
-                if (gTransErr[calId]) {
-                    this.mDB.rollbackTransaction();
-                    delete gTransErr[calId];
-                } else {
-                    this.mDB.commitTransaction();
-                }
-            }
+            this.mDB.rollbackTransaction();
         } else {
-            ASSERT(gTransCount[calId] > 0, "unexepcted batch count!");
+            this.mDB.commitTransaction();
         }
     },
 
     startBatch: function cSC_startBatch() {
-        this.acquireTransaction();
         this.__proto__.__proto__.startBatch.apply(this, arguments);
     },
     endBatch: function cSC_endBatch() {
-        this.releaseTransaction();
         this.__proto__.__proto__.endBatch.apply(this, arguments);
     },
 
@@ -2253,7 +2221,7 @@ calStorageCalendar.prototype = {
         this.prepareStatement(this.mInsertMetaData);
         var sp = this.mInsertMetaData.params;
         sp.item_id = id;
-        try { 
+        try {
             sp.value = value;
         } catch (e) {
             // The storage service throws an NS_ERROR_ILLEGAL_VALUE in
