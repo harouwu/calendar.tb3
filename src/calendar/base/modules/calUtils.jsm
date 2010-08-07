@@ -105,8 +105,8 @@ let cal = {
      * Call this function regularly to process a pending event, e.g. UI.
      */
     processPendingEvent: function cal_processPendingEvent() {
-        let thread = cal.getThreadManager().currentThread;
-        thread.processNextEvent(false /* don't wait */);
+        //let thread = cal.getThreadManager().currentThread;
+        //thread.processNextEvent(false /* don't wait */);
     },
 
     get threadingEnabled() {
