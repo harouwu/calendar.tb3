@@ -375,7 +375,7 @@
             return;
         }
         let item = this.occurrence;
-        if (!isCalendarWritable(item.calendar) || item.calendar.isInvitation(item)) {
+        if (!isCalendarWritable(item.calendar) ||(item.calendar instanceof Components.interfaces.calISchedulingSupport && item.calendar.isInvitation(item))) {
             return;
         }
         if (!this.selected)
