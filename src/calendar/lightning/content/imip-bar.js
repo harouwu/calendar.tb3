@@ -121,7 +121,8 @@ function ltnGetMsgRecipient() {
 function ltnIsSchedulingCalendar(cal) {
     return (isCalendarWritable(cal) &&
             cal.getProperty("organizerId") &&
-            cal.getProperty("itip.transport"));
+            (cal.getProperty("itip.transport")
+             || cal.type == "caldav"));
 }
 
 function imipBarRefreshObserver(calendars, callback, data) {

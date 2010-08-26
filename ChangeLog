@@ -1,3 +1,9 @@
+2010-08-26  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/lightning/content/imip-bar.js:
+	(ltnIsSchedulingCalendar) return true also when caldav accounts
+	support auto-schedule.
+
 2010-08-10  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* We check for item.calendar instanceof
