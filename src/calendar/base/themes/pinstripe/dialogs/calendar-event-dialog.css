@@ -343,44 +343,6 @@ toolbar[iconsize="small"] #button-question:hover:active {
 }
 
 /*--------------------------------------------------------------------
- *   privacy "public" image
- *-------------------------------------------------------------------*/
-
-#button-privacy-public {
-  -moz-image-region: rect(0px 28px 16px 0px);
-}
-#button-privacy-public:hover:active {
-  -moz-image-region: rect(0px 28px 16px 0px);
-}
-#button-privacy-public[disabled="true"] {
-  -moz-image-region: rect(0px 28px 16px 0px);
-}
-
-/*--------------------------------------------------------------------
- *   privacy "private" image
- *-------------------------------------------------------------------*/
-
-#button-privacy-private {
-  -moz-image-region: rect(0px 56px 16px 28px);
-}
-#button-privacy-private:hover:active {
-}
-#button-privacy-private[disabled="true"] {
-}
-
-/*--------------------------------------------------------------------
- *   privacy "confidential" image
- *-------------------------------------------------------------------*/
-
-#button-privacy-confidential {
-  -moz-image-region: rect(0px 84px 16px 56px);
-}
-#button-privacy-confidential:hover:active {
-}
-#button-privacy-confidential[disabled="true"] {
-}
-
-/*--------------------------------------------------------------------
  *   importance "low" image
  *-------------------------------------------------------------------*/
 

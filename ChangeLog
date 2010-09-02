@@ -1,3 +1,12 @@
+2010-09-02  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/calendar-month-view.xml,
+	src/calendar/base/content/calendar-multiday-view.xml: added a
+	"item-classification-box" image next to the alarm-icons-box
+	* src/calendar/base/content/calendar-view-core.xml: added code to
+	set the classification of the item corresponding to the
+	represented box so that we can display a proper icon.
+
 2010-08-26  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/lightning/content/imip-bar.js:

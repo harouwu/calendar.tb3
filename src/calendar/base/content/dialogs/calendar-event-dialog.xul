@@ -1091,15 +1091,12 @@
                       collapsed="true"
                       pack="start">
         <hbox id="status-privacy-public-box" privacy="PUBLIC">
-          <image id="button-privacy-public" class="cal-statusbar-1"/>
           <label value="&event.menu.options.privacy.public.label;"/>
         </hbox>
         <hbox id="status-privacy-confidential-box" privacy="CONFIDENTIAL">
-          <image id="button-privacy-confidential" class="cal-statusbar-1"/>
           <label value="&event.menu.options.privacy.confidential.label;"/>
         </hbox>
         <hbox id="status-privacy-private-box" privacy="PRIVATE">
-          <image id="button-privacy-private" class="cal-statusbar-1"/>
           <label value="&event.menu.options.privacy.private.label;"/>
         </hbox>
       </statusbarpanel>

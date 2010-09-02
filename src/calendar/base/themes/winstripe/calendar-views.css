@@ -238,6 +238,23 @@ calendar-event-box[selected="true"] .calendar-event-selection {
     background-color: #ffdb67 !important;
 }
 
+.item-classification-box {
+    width: 12px;
+    height: 12px;
+}
+
+.item-classification-box[classification="PUBLIC"] {
+    display: none;
+}
+
+.item-classification-box[classification="PRIVATE"] {
+    list-style-image: url("chrome://calendar/skin/private.png");
+}
+
+.item-classification-box[classification="CONFIDENTIAL"] {
+    list-style-image: url("chrome://calendar/skin/confidential.png");
+}
+
 /* RTL styles for the mainbox and children */
 box[anonid="mainbox"] {
     direction: ltr;
