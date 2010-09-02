@@ -55,5 +55,8 @@ XPIDLXPTS = $(XPIDLSRCS:.idl=.xpt)
 $(XPIDL_MODULE).xpt: $(XPIDLXPTS)
 	$(XPT_LINK) $@ $(XPIDLXPTS)
 
+clean:
+	$(RM) $(XPIDLXPTS) $(XPIDL_MODULE).xpt *~
+
 .SUFFIXES: .xpt .idl
 

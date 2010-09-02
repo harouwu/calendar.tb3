@@ -98,7 +98,7 @@ function build {
     cp -f src/calendar/providers/caldav/*.js tmp/calendar-js/
     cp -f src/calendar/providers/storage/*.js tmp/calendar-js/
     cp -f src/calendar/providers/storage/*.jsm tmp/modules/
-    cp -f src/calendar/base/public/*.xpt tmp/modules/
+    cp -f src/calendar/base/public/calbase.xpt tmp/modules/
     cp -f src/calendar/base/modules/*.jsm tmp/modules/
     mv -f tmp/calendar-js/*ACLManagerModule.js tmp/components/
     mv -f tmp/calendar-js/*CalendarModule.js tmp/components/
