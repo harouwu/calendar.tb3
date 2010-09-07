@@ -323,8 +323,8 @@ calAlarm.prototype = {
     },
     set attendees(aValue) {
         this.ensureMutable();
-        // TODO Make add/update/deleteAttendee
-        return (this.mAttendees = aValue);
+        //Not sure where we might need this
+        return this.mAttendees;
     },
 
     get attachments() {
@@ -357,7 +357,8 @@ calAlarm.prototype = {
         "DURATION": "duration",
         "SUMMARY": "summary",
         "DESCRIPTION": "description",
-        "X-MOZ-LASTACK": "lastAck"
+        "X-MOZ-LASTACK": "lastAck",
+        "ATTENDEE": "attendee"
     },
 
     get icalComponent() {
@@ -401,11 +402,10 @@ calAlarm.prototype = {
         }
 
         // Set up attendees (REQUIRED for EMAIL action)
-        /* TODO add support for attendees
         if (this.action == "EMAIL" && !this.attendees.length) {
             throw Components.results.NS_ERROR_NOT_INITIALIZED;
-        } */
-        for each (let attendee in this.attendees) {
+        }
+        for each (let attendee in this.getAlarmAttendees({})) {
             let attendeeProp = icssvc.createIcalProperty("ATTENDEE");
             attendeeProp.value = attendee;
             comp.addProperty(attendeeProp);
@@ -517,7 +517,9 @@ calAlarm.prototype = {
         // Set up attendees
         this.attendees = [];
         for (let attendee in cal.ical.propertyIterator(aComp, "ATTENDEE")) {
-            // XXX this.addAttendee(attendee);
+             let att = new calAttendee();
+             att.icalProperty = attendee;
+             this.addAttendee(att);
         }
 
         // Set up attachments
@@ -593,6 +595,48 @@ calAlarm.prototype = {
 
     get propertyEnumerator() {
         return this.mProperties.enumerator;
+    },
+
+    getAlarmAttendees: function cA_getAlarmAttendees(countObj) {
+            countObj.value = this.mAttendees.length;
+            return this.mAttendees.concat([]);// clone
+    },
+
+    addAttendee: function cA_addAttendee(anAttendee) {
+      let param=1;
+
+      for each (let attendee in this.mAttendees) {
+          if (attendee.toString() == anAttendee.toString()) {
+          //Reset the param if attendee is already present
+              param = 0;
+          }
+      }
+
+      if (param) {
+          this.mAttendees.push(anAttendee);
+      }
+    },
+
+    deleteAttendee: function cA_deleteAttendee(attendee) {
+        let found = false, newAttendees = [];
+        let attendees = this.getAlarmAttendees({});
+        let attIdLowerCase = attendee.id.toLowerCase();
+
+        for (var i = 0; i < attendees.length; i++) {
+             if (attendees[i].id.toLowerCase() != attIdLowerCase) {
+                 newAttendees.push(attendees[i]);
+             } else {
+             found = true;
+             }
+        }
+
+        if (found) {
+            this.mAttendees = newAttendees;
+        }
+    },
+
+    deleteAllAttendees: function cA_deleteAttendee() {
+        this.mAttendees=[];
     },
 
     toString: function cA_toString(aItem) {

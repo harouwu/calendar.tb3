@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "분" >
 <!ENTITY alarm.units.hours                                 "시간" >
 <!ENTITY alarm.units.days                                  "일" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

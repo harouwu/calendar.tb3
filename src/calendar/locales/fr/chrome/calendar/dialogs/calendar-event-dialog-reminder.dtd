@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "minutes" >
 <!ENTITY alarm.units.hours                                 "heures" >
 <!ENTITY alarm.units.days                                  "jours" >
+<!ENTITY reminder.emailOrganizer.label                     "À l'organisateur">
+<!ENTITY reminder.emailAttendees.label                     "Aux invités">

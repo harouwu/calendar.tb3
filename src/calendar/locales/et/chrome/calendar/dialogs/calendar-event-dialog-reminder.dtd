@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "minutit" >
 <!ENTITY alarm.units.hours                                 "tundi" >
 <!ENTITY alarm.units.days                                  "päeva" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

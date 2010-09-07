@@ -48,3 +48,5 @@
 <!ENTITY alarm.units.minutes "minuti">
 <!ENTITY alarm.units.hours "ore">
 <!ENTITY alarm.units.days "giorni">
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

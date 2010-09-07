@@ -57,7 +57,7 @@ function onLoad() {
 
     // Set up the action map
     let supportedActions = calendar.getProperty("capabilities.alarms.actionValues") ||
-                           ["DISPLAY" /* TODO email support, "EMAIL" */];
+                           ["DISPLAY"];
     for each (let action in supportedActions) {
         allowedActionsMap[action] = true;
     }
@@ -143,6 +143,7 @@ function setupRadioEnabledState(aDisableAll) {
     if (aDisableAll) {
         relativeDisabled = "true";
         absoluteDisabled = "true";
+        hideCheckBoxes();
     } else if (relationItem) {
         // This is not a mistake, when this function is called from onselect,
         // the value has not been set.
@@ -164,6 +165,8 @@ function setupRadioEnabledState(aDisableAll) {
     setElementValue("reminder-relative-radio", disableAll, "disabled");
     setElementValue("reminder-absolute-radio", disableAll, "disabled");
     setElementValue("reminder-actions-menulist", disableAll, "disabled");
+    setElementValue("reminder-actions-email-organizer", disableAll, "disabled");
+    setElementValue("reminder-actions-email-attendees", disableAll, "disabled");
 }
 
 /**
@@ -254,6 +257,15 @@ function onReminderSelected() {
 
     if (listitem) {
         let reminder = listitem.reminder;
+ 
+    if (reminder.action != "EMAIL") {
+        hideCheckBoxes();
+    }
+    else {
+        document.getElementById("reminder-actions-email-organizer").checked = false;
+        document.getElementById("reminder-actions-email-attendees").checked = false;
+        showCheckBoxes(listitem);
+    }
 
         // Action
         actionType.value = reminder.action;
@@ -316,6 +328,8 @@ function updateReminder(event) {
         // supressOnSelect stuff.
         return;
     }
+    let calendar = window.arguments[0].calendar;
+    let item = window.arguments[0].item;
     let listbox = document.getElementById("reminder-listbox");
     let relationItem = document.getElementById("reminder-relation-radiogroup").selectedItem;
     let listitem = listbox.selectedItem;
@@ -329,9 +343,40 @@ function updateReminder(event) {
     let origin = document.getElementById("reminder-origin");
     let absDate = document.getElementById("reminder-absolute-date");
     let action = document.getElementById("reminder-actions-menulist").selectedItem.value;
+    let emailOrganizer = document.getElementById("reminder-actions-email-organizer").checked;
+    let emailAttendees = document.getElementById("reminder-actions-email-attendees").checked;
+    let organizer = item.organizer;
 
     // Action
     reminder.action = action;
+
+    //Add/Remove Organizer to/from Alarm Attendees
+    if (organizer != null) {
+        if (emailOrganizer) {
+            reminder.addAttendee(organizer);
+        }
+        else {
+            reminder.deleteAttendee(organizer);
+        }
+    }
+    //Add/Remove event Attendees to/from Alarm Attendees
+    if (emailAttendees) {
+        let attendeesArray = item.getAttendees({});
+        for each (let attendee in attendeesArray) {
+            reminder.addAttendee(attendee);
+        }
+    } else {
+        let attendees = item.getAttendees({});
+        for each (let attendee in attendees) {
+            reminder.deleteAttendee(attendee);
+        }
+    }
+
+    if(document.getElementById("reminder-actions-menulist").selectedIndex){
+        showCheckBoxes(listitem);
+    } else {
+        hideCheckBoxes();
+    }
 
     let relationType;
     if (relationItem.value == "relative") {
@@ -435,6 +480,45 @@ function onRemoveReminder() {
                     listbox.childNodes.length < 1 && "true",
                     "disabled");
     setupMaxReminders();
+}
+
+/**
+ * Function to be called when user selects an EMAIL Alarm
+ */
+function showCheckBoxes(listitem){
+    setElementValue("reminder-action-options", "EMAIL","action");
+    showElement("reminder-actions-email-organizer");
+    showElement("reminder-actions-email-attendees");
+
+    let calendar =  window.arguments[0].calendar;
+    let item = window.arguments[0].item;
+    let listbox = document.getElementById("reminder-listbox");
+    let organizerPresent = 0;
+    let attendeesPresent = 0;
+ 
+    if (listitem) {
+        let reminder = listitem.reminder;
+        let attendees = reminder.getAlarmAttendees({});
+        for each (let attendee in attendees) {
+            if (attendee.toString() == item.organizer.toString()) {
+               organizerPresent = 1;
+            }
+        }
+        if ((attendees.length > 0 && !organizerPresent) || (attendees.length > 1)) {
+            attendeesPresent = 1;
+        }
+        if (organizerPresent) {
+           document.getElementById("reminder-actions-email-organizer").checked = true;
+        }
+        if (attendeesPresent) {
+           document.getElementById("reminder-actions-email-attendees").checked = true;
+        }
+    }
+}
+
+function hideCheckBoxes(){
+    hideElement("reminder-actions-email-organizer");
+    hideElement("reminder-actions-email-attendees");
 }
 
 /**

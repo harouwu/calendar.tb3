@@ -153,4 +153,28 @@
                 label="&reminder.action.email.label;"/>
     </menupopup>
   </menulist>
+  <hbox>
+ 
+    </hbox>
+  <hbox id="reminder-action-options">
+    <!-- Extensions can add their options box here,
+         Just Give it the same class as below
+         Example css rule :
+         #reminder-action-options[action="EMAIL"] >
+         .reminder-action-option-box[action="EMAIL"] {
+          display: -moz-box;
+         } -->
+    <hbox class="reminder-action-option-box" action="EMAIL">
+      <checkbox id="reminder-actions-email-organizer"
+                label="&reminder.emailOrganizer.label;"
+                checked="false"
+                oncommand="updateReminder(event);"/>
+      <checkbox id="reminder-actions-email-attendees"
+                label="&reminder.emailAttendees.label;"
+                checked="false"
+                oncommand="updateReminder(event);"/>
+    </hbox>
+  </hbox>
+
+
 </dialog>

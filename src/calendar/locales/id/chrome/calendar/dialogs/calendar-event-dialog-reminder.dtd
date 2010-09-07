@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "menit" >
 <!ENTITY alarm.units.hours                                 "jam" >
 <!ENTITY alarm.units.days                                  "hari" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "分钟" >
 <!ENTITY alarm.units.hours                                 "小时" >
 <!ENTITY alarm.units.days                                  "天" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

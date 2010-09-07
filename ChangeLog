@@ -1,3 +1,18 @@
+2010-09-07  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Fixed the repackage.sh script to properly place
+	calbase.xpt in the components directory
+	* Included patch for bug
+	https://bugzilla.mozilla.org/show_bug.cgi?id=585005
+	which was part of our GSoC project with Mozilla
+	* Regenerated calbase.xpt because of the idl changes
+	from the patch above
+	* src/calendar/providers/caldav/calDavCalendar.js
+	Modified so we support EMAIL and DISPLAY alarm
+	properties (capabilities.alarms.actionValues)
+	on the calendar.
+	* Adjusted all DTD to include the new strings 
+
 2010-09-02  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/content/calendar-month-view.xml,

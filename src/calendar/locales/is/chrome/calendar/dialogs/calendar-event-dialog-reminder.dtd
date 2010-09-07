@@ -48,3 +48,5 @@
 <!ENTITY alarm.units.minutes "mínútur">
 <!ENTITY alarm.units.hours "klukkustundir">
 <!ENTITY alarm.units.days "dagar">
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

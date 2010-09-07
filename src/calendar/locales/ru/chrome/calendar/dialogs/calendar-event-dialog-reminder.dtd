@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "минут" >
 <!ENTITY alarm.units.hours                                 "часов" >
 <!ENTITY alarm.units.days                                  "дней" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

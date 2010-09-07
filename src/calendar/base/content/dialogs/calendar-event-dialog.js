@@ -2199,6 +2199,7 @@ function saveItem() {
     // they rely on this fact (e.g. WCAP does).
     var originalItem = window.calendarItem;
     var item = originalItem.clone();
+    let calendar = window.arguments[0].calendar;
 
     // override item's recurrenceInfo *before* serializing date/time-objects.
     if (!item.recurrenceId) {
@@ -2208,14 +2209,75 @@ function saveItem() {
     // serialize the item
     saveDialog(item);
 
-    if (originalItem.parentItem == originalItem) {
-        item.organizer = window.organizer;
-    }
+    item.organizer = window.organizer;
 
     item.removeAllAttendees();
+    
+    // attendeesPresent saves if the attendees are present in the an alarm before deleting all the attendees for sync.
+    let attendeesPresent = new Array();
+    let organizerPresent = new Array();
+
+    let alarms = item.getAlarms({}).filter(function(x) x.action != "DISPLAY");
+    let i=0;
+    if (window.attendees.length < 1) {
+        for each (let alarm in alarms) {
+            item.deleteAlarm(alarm);
+        }
+    }
+
+    for each (let alarm in alarms) {
+        let flag = 0;
+        for each (let attendee in alarm.getAlarmAttendees({})) {
+            if (attendee.toString() == item.organizer.toString()) {
+                flag = 1;
+            }
+        }
+        organizerPresent[i] = flag;
+        i++;
+    }
+
+    i = 0;
+    for each(let alarm in alarms){
+        let attendees = alarm.getAlarmAttendees({});
+        if (attendees.length > 1) {
+            attendeesPresent[i] = 1;
+        }
+        else if (alarm.getAlarmAttendees({}).length > 0 &&
+                 !organizerPresent[i]) {
+            attendeesPresent[i] = 1;
+        }
+        else {
+            attendeesPresent[i] = 0;
+        }
+           i++;
+    }
+    let displayAlarms = item.getAlarms({}).filter(function(x) x.action == "DISPLAY");
+    for each (let alarm in displayAlarms) {
+        let alarmAttendees = alarm.getAlarmAttendees({});
+        for each (let attendee in alarmAttendees) {
+            alarm.deleteAttendee(attendee);
+        }
+    }
+
+    i=0;
+    for each(let alarm in alarms){
+        alarm.deleteAllAttendees();
+        if(organizerPresent[i]){
+           alarm.addAttendee(item.organizer);
+        }
+        i++;
+    }
     if (window.attendees && (window.attendees.length > 0)) {
         for each (var attendee in window.attendees) {
            item.addAttendee(attendee);
+           //Lets synchronize event attendees with EMAIL Alarm attendees
+            let counter = 0;
+            for each (alarm in item.getAlarms({}).filter(function(x) x.action == "EMAIL")) {
+                if(attendeesPresent[counter]){
+                    alarm.addAttendee(attendee);
+                }
+            counter++;
+            }
         }
 
         let notifyCheckbox = document.getElementById("notify-attendees-checkbox");

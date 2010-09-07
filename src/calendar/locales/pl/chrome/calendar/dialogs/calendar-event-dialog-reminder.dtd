@@ -53,3 +53,5 @@
 <!ENTITY alarm.units.minutes                               "minut" >
 <!ENTITY alarm.units.hours                                 "godzin" >
 <!ENTITY alarm.units.days                                  "dni" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

@@ -48,6 +48,8 @@
 
 <!ENTITY reminder.action.alert.label                       "Show an Alert">
 <!ENTITY reminder.action.email.label                       "Send an E-mail">
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">
 
 <!ENTITY alarm.units.minutes                               "minutes" >
 <!ENTITY alarm.units.hours                                 "hours" >

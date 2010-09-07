@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "minuten" >
 <!ENTITY alarm.units.hours                                 "oeren" >
 <!ENTITY alarm.units.days                                  "dagen" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

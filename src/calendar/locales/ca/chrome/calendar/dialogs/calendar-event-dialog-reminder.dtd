@@ -53,3 +53,5 @@
 <!ENTITY alarm.units.hours                                 "hores" >
 <!ENTITY alarm.units.days                                  "dies" >
 
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

@@ -43,8 +43,9 @@ interface calIDateTime;
 interface calIDuration;
 interface calIItemBase;
 interface calIIcalComponent;
+interface calIAttendee;
 
-[scriptable, uuid(b8db7c7f-c168-4e11-becb-f26c1c4f5f8f)]
+[scriptable, uuid(2e1cfd23-caee-4721-b085-afe5e6e9b894)]
 interface calIAlarm : nsISupports
 {
     /**
@@ -141,12 +142,27 @@ interface calIAlarm : nsISupports
      */
     attribute AUTF8String summary;
 
-    /**
-     * Manage Attendee for this alarm. Not valid for AUDIO and DISPLAY alarms.
+     /**
+     * Get all the Attendee of an Alarm. Not valid for AUDIO and DISPLAY alarms.
      */
-    // TODO void addAttendee(in AUTF8String aAttendee);
-    // TODO void deleteAttendee(in AUTF8String aAttendee);
+    void getAlarmAttendees(out PRUint32 count,
+                           [array,size_is(count),retval] out calIAttendee attendees);
 
+    /**
+     * Add an Attendee to an Alarm. Not valid for AUDIO and DISPLAY alarms.
+     */
+    void addAttendee(in calIAttendee attendee);
+
+    /**
+     * Delete an Attendee from an Alarm. Not valid for AUDIO and DISPLAY alarms.
+     */
+    void deleteAttendee(in calIAttendee attendee);
+
+     /**
+     * Delete all the Attendees from an Alarm except the Attendee passed. Not valid for AUDIO and DISPLAY alarms.
+     * Useful when all the Attendees except Organizer are to be removed
+     */
+    void deleteAllAttendees();
     /**
      * Manage Attachments for this alarm.
      * For EMAIL alarms, more than one attachment can be specified.

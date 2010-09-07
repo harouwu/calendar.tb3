@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "phút" >
 <!ENTITY alarm.units.hours                                 "giờ" >
 <!ENTITY alarm.units.days                                  "ngày" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

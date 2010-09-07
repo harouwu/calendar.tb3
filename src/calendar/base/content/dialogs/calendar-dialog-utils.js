@@ -655,8 +655,18 @@ function saveReminder(item) {
         }
 
         // Make sure only alarms are saved that work in the given calendar.
-        reminders.filter(function(x) x.action in alarmActions)
-                 .forEach(item.addAlarm, item);
+        // Make sure that the EMAIL alarm with no attendees is not getting saved.
+        reminders.filter (function(x) {
+           if (x.action in alarmActions &&
+               x.action != "DISPLAY" &&
+               x.getAlarmAttendees({}).length > 0) {
+               return true;
+           } else if (x.action == "DISPLAY") {
+                      return true;
+           } else {
+                 return false;
+           }
+        }).forEach(item.addAlarm, item);
     }
 }
 

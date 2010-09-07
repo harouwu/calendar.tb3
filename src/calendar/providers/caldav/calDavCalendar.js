@@ -427,6 +427,8 @@ calDavCalendar.prototype = {
                     return entry.ownerIdentities[0];
                 }
                 break;
+	    case "capabilities.alarms.actionValues":
+	        return ["DISPLAY", "EMAIL"];
             }
         } else {
             switch (aName) {

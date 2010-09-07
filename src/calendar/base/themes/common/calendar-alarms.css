@@ -98,3 +98,12 @@
     width: auto;
     height: auto;
 }
+
+#reminder-action-options > .reminder-action-option-box {
+    display: none;
+}
+
+#reminder-action-options[action="EMAIL"] >
+.reminder-action-option-box[action="EMAIL"] {
+    display: -moz-box;
+}

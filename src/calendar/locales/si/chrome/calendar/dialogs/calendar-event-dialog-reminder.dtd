@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "විනාඩි" >
 <!ENTITY alarm.units.hours                                 "පැය" >
 <!ENTITY alarm.units.days                                  "දින" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

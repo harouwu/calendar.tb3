@@ -52,3 +52,5 @@
 <!ENTITY alarm.units.minutes                               "perc" >
 <!ENTITY alarm.units.hours                                 "óra" >
 <!ENTITY alarm.units.days                                  "nap" >
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">

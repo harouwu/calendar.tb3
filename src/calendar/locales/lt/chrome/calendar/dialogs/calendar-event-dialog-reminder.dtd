@@ -53,3 +53,5 @@
 <!ENTITY alarm.units.minutes                               "min.">
 <!ENTITY alarm.units.hours                                 "val.">
 <!ENTITY alarm.units.days                                  "d.">
+<!ENTITY reminder.emailOrganizer.label                     "Email Organizer">
+<!ENTITY reminder.emailAttendees.label                     "Email Attendees">
