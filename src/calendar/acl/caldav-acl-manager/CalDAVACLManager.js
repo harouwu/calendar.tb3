@@ -141,7 +141,7 @@ CalDAVACLManager.prototype = {
                                             .getService(Components.interfaces.nsIObserverService);
             if (data.component) {
                 observerService.notifyObservers(null,
-                                                "caldav-compenent-acl-reset",
+                                                "caldav-component-acl-reset",
                                                 data.component);
                 if (this.calendars[fixedURL]
                     && this.calendars[fixedURL].entries)
@@ -171,7 +171,7 @@ CalDAVACLManager.prototype = {
                 compData.wrappedJSObject = compData;
                 observerService.notifyObservers(null,
                                                 "caldav-component-acl-reset",
-                                                compData);
+                                                compData);	      
                 delete this.calendars[fixedURL].entries[data.component];
             } else {
                 dump("   query url: " + url + "\n");

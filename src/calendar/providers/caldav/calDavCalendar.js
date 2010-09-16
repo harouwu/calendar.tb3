@@ -2571,19 +2571,19 @@ if (!message) {
             if (aTopic == "caldav-acl-loaded") {
                 let entry = this.mACLMgr.calendarEntry(this.uri);
                 if (!entry.hasAccessControl) {
-                    LOG("[caldav] server has no access control\n");
+                    cal.LOG("[caldav] server has no access control\n");
                     this.readOnly = false;
                 }
             } else if (aTopic == "caldav-acl-reset") {
                 /* An error occured during the refresh of ACL. Since it may be
                    due to the lack of support for ACLS, we go on with the
                    refresh.*/
-                LOG("[caldav] calendar " + this.id + " '"
-                    + this.calendarUri.spec
+                cal.LOG("[caldav] calendar " + this.id + " '"
+                    + this.uri.spec
                     + "' does not support ACL (or server failure occured)");
             }
             if (this.mACLRefreshData) {
-                LOG("[caldav] calendar " + this.id + ": proceed with refresh");
+                cal.LOG("[caldav] calendar " + this.id + ": proceed with refresh");
                 this.safeRefresh(this.mACLRefreshData.changeLogListener);
                 delete this.mACLRefreshData;
             }
