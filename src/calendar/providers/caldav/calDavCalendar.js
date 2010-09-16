@@ -60,7 +60,6 @@ function calDavCalendar() {
     this.unmappedProperties = [];
     this.mUriParams = null;
     this.mItemInfoCache = {};
-    this.mDisabled = false;
     this.mCalHomeSet = null;
     this.mInboxUrl = null;
     this.mOutboxUrl = null;
@@ -268,8 +267,6 @@ calDavCalendar.prototype = {
 
     // readonly attribute AUTF8String type;
     get type() { return "caldav"; },
-
-    mDisabled: true,
 
     mCalendarUserAddress: null,
     get calendarUserAddress() {
@@ -1192,7 +1189,7 @@ calDavCalendar.prototype = {
                                                 Components.results.NS_ERROR_FAILURE);
                 }
                 return;
-            } else if (request.responseStatus == 207 && thisCalendar.mDisabled) {
+            } else if (request.responseStatus == 207 && thisCalendar.disabled) {
                 // Looks like the calendar is there again, check its resource
                 // type first.
                 this.checkDavResourceType(aChangeLogListener);
@@ -1317,7 +1314,7 @@ calDavCalendar.prototype = {
             return;
         }
 
-		if (this.mDisabled) {
+		if (this.disabled) {
             // check if maybe our calendar has become available
             this.checkDavResourceType(aChangeLogListener);
             return;
@@ -1525,14 +1522,14 @@ calDavCalendar.prototype = {
             // end of SOGo specialcasing
 
             if (resourceType == kDavResourceTypeNone &&
-                !thisCalendar.mDisabled) {
+                !thisCalendar.disabled) {
                 thisCalendar.completeCheckServerInfo(aChangeLogListener,
                                                      Components.interfaces.calIErrors.DAV_NOT_DAV);
                 return;
             }
 
             if ((resourceType == kDavResourceTypeCollection) &&
-                !thisCalendar.mDisabled) {
+                !thisCalendar.disabled) {
                 thisCalendar.completeCheckServerInfo(aChangeLogListener,
                                                      Components.interfaces.calIErrors.DAV_DAV_NOT_CALDAV);
                 return;
@@ -1540,9 +1537,9 @@ calDavCalendar.prototype = {
 
             // if this calendar was previously offline we want to recover
             if ((resourceType == kDavResourceTypeCalendar) &&
-                thisCalendar.mDisabled) {
-                thisCalendar.mDisabled = false;
-                thisCalendar.mReadOnly = false;
+                thisCalendar.disabled) {
+                thisCalendar.disabled = false;
+                thisCalendar.readOnly = false;
             }
 
             thisCalendar.setCalHomeSet();
@@ -1977,8 +1974,6 @@ calDavCalendar.prototype = {
             return;
         }
 
-        this.mReadOnly = true;
-        this.mDisabled = true;
         this.readOnly = true;
         this.disabled = true;
 if (!message) {
@@ -2557,7 +2552,7 @@ if (!message) {
       if (!attendee && this.mACLMgr) {
           let entry = this.mACLMgr.calendarEntry(this.uri);
 
-          if (entry.isCalendarReady()) {
+          if (entry.isCalendarReady() && entry.ownerIdentities) {
               let identity;
               for (let i = 0; !attendee && i < entry.ownerIdentities.length; i++) {
                   identity = "mailto:" + entry.ownerIdentities[i].email.toLowerCase();

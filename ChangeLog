@@ -1,3 +1,10 @@
+2010-09-15  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	src/calendar/providers/caldav/calDavCalendar.js
+	* Dropped mReadOnly and mDisabled since we
+	already have readOnly and disabled and all
+	fours were conflicting
+
 2010-09-07  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* Fixed the repackage.sh script to properly place
