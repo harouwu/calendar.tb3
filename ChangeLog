@@ -1,3 +1,9 @@
+2010-09-17  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/caldav/calDavCalendar.js:
+	(safeRefresh_safeRefresh_onStreamComplete): make the try/catch
+	useful with regards to the "request" variable.
+
 2010-09-15  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	src/calendar/providers/caldav/calDavCalendar.js

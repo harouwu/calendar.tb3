@@ -1167,34 +1167,36 @@ calDavCalendar.prototype = {
         let streamListener = {};
         streamListener.onStreamComplete =
             function safeRefresh_safeRefresh_onStreamComplete(aLoader, aContext, aStatus, aResultLength, aResult) {
-            let request = aLoader.request.QueryInterface(Components.interfaces.nsIHttpChannel);
+            let request;
             try {
+                request = aLoader.request.QueryInterface(Components.interfaces.nsIHttpChannel);
                 cal.LOG("CalDAV: Status " + request.responseStatus +
                         " checking ctag for calendar " + thisCalendar.name);
+
+                if (request.responseStatus == 404) {
+                    cal.LOG("CalDAV: Disabling calendar " + thisCalendar.name +
+                            " due to 404");
+                    if (thisCalendar.isCached && aChangeLogListener) {
+                        aChangeLogListener.onResult({ status: Components.results.NS_ERROR_FAILURE },
+                                                    Components.results.NS_ERROR_FAILURE);
+                    }
+                    return;
+                } else if (request.responseStatus == 207 && thisCalendar.disabled) {
+                    // Looks like the calendar is there again, check its resource
+                    // type first.
+                    this.checkDavResourceType(aChangeLogListener);
+                    return;
+                }
             } catch (ex) {
                 cal.LOG("CalDAV: Error without status on checking ctag for calendar " +
                         thisCalendar.name);
+                cal.LOG("  exception: " + ex);
                 if (thisCalendar.isCached && aChangeLogListener) {
                     aChangeLogListener.onResult({ status: Components.results.NS_OK },
                                                 Components.results.NS_OK);
                 }
                 return;
             }
-
-            if (request.responseStatus == 404) {
-                cal.LOG("CalDAV: Disabling calendar " + thisCalendar.name +
-                        " due to 404");
-                if (thisCalendar.isCached && aChangeLogListener) {
-                    aChangeLogListener.onResult({ status: Components.results.NS_ERROR_FAILURE },
-                                                Components.results.NS_ERROR_FAILURE);
-                }
-                return;
-            } else if (request.responseStatus == 207 && thisCalendar.disabled) {
-                // Looks like the calendar is there again, check its resource
-                // type first.
-                this.checkDavResourceType(aChangeLogListener);
-                return;
-             }
 
             let str = cal.convertByteArray(aResult, aResultLength);
             if (!str) {
