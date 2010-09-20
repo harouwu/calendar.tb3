@@ -1184,7 +1184,7 @@ calDavCalendar.prototype = {
                 } else if (request.responseStatus == 207 && thisCalendar.disabled) {
                     // Looks like the calendar is there again, check its resource
                     // type first.
-                    this.checkDavResourceType(aChangeLogListener);
+                    thisCalendar.checkDavResourceType(aChangeLogListener);
                     return;
                 }
             } catch (ex) {
