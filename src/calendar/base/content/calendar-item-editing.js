@@ -322,7 +322,7 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
         }
     }
     catch(e) {}
-    /* /ACL code */
+    /* ACL code */
 
     calendar = calendar || getSelectedCalendar();
     var calendars = getCalendarManager().getCalendars({});
