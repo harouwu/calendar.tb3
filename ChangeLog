@@ -1,3 +1,9 @@
+2010-10-05  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/caldav/calDavCalendar.js
+	(safeRefresh_safeRefresh_onStreamComplete): notify "onLoad" on
+	observers when the current calendar is not a cached calendar.
+
 2010-09-17  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/providers/caldav/calDavCalendar.js:

@@ -1241,6 +1241,9 @@ calDavCalendar.prototype = {
                     aChangeLogListener.onResult({ status: Components.results.NS_OK },
                                                 Components.results.NS_OK);
                 }
+                else {
+                    thisCalendar.mObservers.notify("onLoad", [thisCalendar]);
+                }
 
                 // we may still need to poll the inbox
                 if (thisCalendar.firstInRealm()) {
