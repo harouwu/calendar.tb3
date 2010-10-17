@@ -626,6 +626,8 @@ function loadReminders(reminders) {
  * @param item      The item save the reminder into.
  */
 function saveReminder(item) {
+    let calendar = window.arguments[0].calendar;
+
     // Clear alarms, we'll need to remove alarms later  anyway.
     item.clearAlarms();
 
@@ -656,16 +658,19 @@ function saveReminder(item) {
 
         // Make sure only alarms are saved that work in the given calendar.
         // Make sure that the EMAIL alarm with no attendees is not getting saved.
-        reminders.filter (function(x) {
-           if (x.action in alarmActions &&
-               x.action != "DISPLAY" &&
-               x.getAlarmAttendees({}).length > 0) {
-               return true;
-           } else if (x.action == "DISPLAY") {
-                      return true;
-           } else {
-                 return false;
-           }
+        reminders.filter(function(x){
+            if (x.action in alarmActions &&
+            x.action == "EMAIL" &&
+            x.getAlarmAttendees({}).length > 0) {
+                return true;
+            }
+            else 
+                if (x.action in alarmActions &&
+                         calendar.type == "gdata"){
+                         return true;
+                } else {
+                    return false;
+                }
         }).forEach(item.addAlarm, item);
     }
 }

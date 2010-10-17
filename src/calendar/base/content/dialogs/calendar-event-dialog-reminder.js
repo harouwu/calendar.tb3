@@ -226,6 +226,11 @@ function setupMaxReminders() {
 function setupListItem(aListItem, aReminder, aItem) {
     let listitem = aListItem || createXULElement("listitem");
 
+    // Hide the send Email option if no attendees have been saved already to the item/event
+    if (aItem.getAttendees({}).length == 0) {
+	     hideElement("reminder-action-EMAIL");
+    }
+
     // Create a random id to be used for accessibility
     let reminderId = cal.getUUID();
     let ariaLabel = "reminder-action-" + aReminder.action + " " + reminderId;
@@ -372,7 +377,7 @@ function updateReminder(event) {
         }
     }
 
-    if(document.getElementById("reminder-actions-menulist").selectedIndex){
+    if (document.getElementById("reminder-actions-menulist").selectedIndex){
         showCheckBoxes(listitem);
     } else {
         hideCheckBoxes();
@@ -495,6 +500,10 @@ function showCheckBoxes(listitem){
     let listbox = document.getElementById("reminder-listbox");
     let organizerPresent = 0;
     let attendeesPresent = 0;
+	
+	if (item.getAttendees({}).length == 0) {
+		hideElement("reminder-action-EMAIL");
+	}
  
     if (listitem) {
         let reminder = listitem.reminder;
