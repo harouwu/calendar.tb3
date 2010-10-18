@@ -183,8 +183,7 @@ etagsHandler.prototype = {
                 this.changelogListener.onResult({ status: Components.results.NS_OK },
                                                 Components.results.NS_OK);
             }
-
-            if (needsRefresh) {
+            else {
                 this.calendar.mObservers.notify("onLoad", [this.calendar]);
             }
 
@@ -199,7 +198,7 @@ etagsHandler.prototype = {
                                        this.baseUri,
                                        null,
                                        null,
-                                       this.changeLogListener)
+                                       this.changelogListener)
             multiget.doMultiGet();
         }
     },
@@ -550,7 +549,7 @@ webDavSyncHandler.prototype = {
                                                    this.baseUri,
                                                    this.newSyncToken,
                                                    null,
-                                                   this.changeLogListener)
+                                                   this.changelogListener)
             multiget.doMultiGet();
         }
 

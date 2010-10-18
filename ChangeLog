@@ -1,3 +1,11 @@
+2010-10-18  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/providers/caldav/calDavRequestHandlers.js:
+	(etagsListener.onStopRequest): invoke "onLoad" notification for
+	non-cached calendars whether new items have been fetched or not,
+	to finalize the refresh UI actions. Fixed typos prevents passing
+	of the changelog listener to the multiget handler.
+
 2010-10-05  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/providers/caldav/calDavCalendar.js
