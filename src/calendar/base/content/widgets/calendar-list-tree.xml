@@ -276,7 +276,7 @@
         // calIObserver. Note that each registered calendar uses this observer
         onStartBatch: function cMO_onStartBatch() { },
         onEndBatch: function cMO_onEndBatch() { },
-        onLoad: function cMO_onLoad() { },
+        onLoad: function cMO_onLoad() { SCComputeEnableNewItems(); },
 
         onAddItem: function cMO_onAddItem(aItem) { },
         onModifyItem: function cMO_onModifyItem(aNewItem, aOldItem) { },

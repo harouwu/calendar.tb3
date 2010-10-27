@@ -1,3 +1,10 @@
+2010-10-27  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/widgets/calendar-list-tree.xml:
+	(nsITreeView.calObserver.onLoad) invoke SCComputeEnableNewItems to
+	reenable the creation menu entries when the calendars become
+	ready.
+
 2010-10-18  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/providers/caldav/calDavRequestHandlers.js:
