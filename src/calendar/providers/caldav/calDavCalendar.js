@@ -446,7 +446,9 @@ calDavCalendar.prototype = {
         switch(aName) {
 //         case "cache.updateTimer":
 //             return getPrefSafe("calendar.autorefresh.timeout");
-        case "itip.transport":
+ 	case "itip.disableRevisionChecks":
+	    return true;
+ 	case "itip.transport":
             if (this.hasAutoScheduling) {
                 return null;
             } else if (this.hasScheduling) {
