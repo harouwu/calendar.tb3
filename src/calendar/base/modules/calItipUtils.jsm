@@ -874,24 +874,15 @@ ItipFindItemListener.prototype = {
                                 case "REQUEST":
                                     if (item.calendar.getProperty("itip.disableRevisionChecks") ||
                                         cal.itip.compare(itipItemItem, item) > 0) {
-                                        //let newItem = updateItem(item, itipItemItem);
-                                        // Don't call updateItem since it'll replace the
-					// iCalComponent from the one of the item item - which is
-					// rather strange and for SOGo, it doesn't matter as item
-					// is the LATEST copy from the server.
-					let newItem = item.clone();
-					setReceivedInfo(newItem, itipItemItem);
-					newItem.generation = item.generation;
-
-					let att = cal.getInvitedAttendee(newItem);
-                                        
-					if (!att) { // fall back to using configured organizer
+                                        let newItem = updateItem(item, itipItemItem);
+                                        let att = cal.getInvitedAttendee(newItem);
+                                        if (!att) { // fall back to using configured organizer
                                             att = createOrganizer(newItem.calendar);
                                             if (att) {
                                                 att.isOrganizer = false;
                                             }
                                         }
-					if (att) {
+                                        if (att) {
                                             addScheduleAgentClient(newItem, item.calendar);
                                             newItem.removeAttendee(att);
                                             att = att.clone();
@@ -907,9 +898,8 @@ ItipFindItemListener.prototype = {
                                             };
                                             let isMinorUpdate = (cal.itip.getSequence(newItem) ==
                                                                  cal.itip.getSequence(item));
-                                            actionMethod = "REQUEST";
-					    //actionMethod = (isMinorUpdate ? method + ":UPDATE-MINOR"
-                                            //                              : method + ":UPDATE");
+                                            actionMethod = (isMinorUpdate ? method + ":UPDATE-MINOR"
+                                                                          : method + ":UPDATE");
                                             operations.push(action);
                                         }
                                     }

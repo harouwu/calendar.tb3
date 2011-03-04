@@ -119,33 +119,10 @@ function ltnGetMsgRecipient() {
 }
 
 function ltnIsSchedulingCalendar(cal) {
-    let b = (isCalendarWritable(cal) &&
+    return (isCalendarWritable(cal) &&
             cal.getProperty("organizerId") &&
             (cal.getProperty("itip.transport")
              || cal.type == "caldav"));
-
-    if (b && cal.type == "caldav") {
-       let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                      .getService(Components.interfaces.nsISupports)
-                      .wrappedJSObject;
-       //dump("url: " + cal.uri.spec + "\n");
-       let entry = aclMgr.calendarEntry(cal.uri);
-       let recipient = "mailto:" + ltnGetMsgRecipient();
-      
-       if (entry.isCalendarReady() && entry.ownerIdentities) {
- 	let identity;
- 	for (let i = 0; i < entry.ownerIdentities.length; i++) {
- 	  identity = "mailto:" + entry.ownerIdentities[i].email.toLowerCase();
-	  //dump("identity: " + identity + "\n");
-	  //dump("recipient: " + recipient + "\n");
- 	  if (identity == recipient) return true;
- 	}
-	
-	return false;
-       }
-     }
-    
-    return b;
 }
 
 function imipBarRefreshObserver(calendars, callback, data) {
