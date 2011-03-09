@@ -791,7 +791,6 @@ function minimonthPick(aNewDate) {
 
 /* ACL code */
 function SCComputeEnableNewItems() {
-    dump("SCComputeEnableNewItems\n");
     let oldValue = SCEnableNewItems;
 
     SCEnableNewItems = false;
