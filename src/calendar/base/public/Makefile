@@ -2,7 +2,7 @@ XPIDL_MODULE = calbase
 
 XULRUNNER = /usr/lib/xulrunner-devel-1.9.1
 # INCLUDE_DIR = $(XULRUNNER)/sdk/idl
-INCLUDE_DIR = /home/wsourdeau/src/mozilla/idls
+INCLUDE_DIR = /usr/share/idl/xulrunner-1.9.1/unstable
 XPIDL = $(XULRUNNER)/bin/xpidl
 XPT_LINK = $(XULRUNNER)/bin/xpt_link
 
