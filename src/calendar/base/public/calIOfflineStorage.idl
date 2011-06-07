@@ -36,6 +36,7 @@
 
 #include "nsISupports.idl"
 
+interface calIItemBase;
 interface calIOperationListener;
 
 /**
