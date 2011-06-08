@@ -50,7 +50,7 @@ interface calIOfflineStorage : nsISupports
      * @param aId         id of the item to add
      * @param aListener   where to call back the results
      */
-    void addOfflineItem(in AUTF8String aId, in calIOperationListener aListener);
+    void addOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
 
     /**
      * modifyOfflineItem mark the item of which the id is passed as parameter as
@@ -59,7 +59,7 @@ interface calIOfflineStorage : nsISupports
      * @param aId         id of the item to add
      * @param aListener   where to call back the results
      */
-    void modifyOfflineItem(in AUTF8String aId, in calIOperationListener aListener);
+    void modifyOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
 
     /**
      * deleteOfflineItem mark the item of which the id is passed as parameter as
@@ -68,5 +68,5 @@ interface calIOfflineStorage : nsISupports
      * @param aId         id of the item to add
      * @param aListener   where to call back the results
      */
-    void deleteOfflineItem(in AUTF8String aId, in calIOperationListener aListener);
+    void deleteOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
 };
