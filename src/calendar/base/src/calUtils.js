@@ -294,6 +294,7 @@ function isCalendarWritable(aCalendar) {
                     !aCalendar.readOnly &&
                     (entry.userIsOwner() || entry.userCanAddComponents()) &&
                     (!getIOService().offline ||
+                     aCalendar.getProperty("cache.enabled") ||
                      aCalendar.getProperty("requiresNetwork") === false));
         }
     }
@@ -301,6 +302,7 @@ function isCalendarWritable(aCalendar) {
     return (!aCalendar.getProperty("disabled") &&
             !aCalendar.readOnly &&
             (!getIOService().offline ||
+             aCalendar.getProperty("cache.enabled") ||
              aCalendar.getProperty("requiresNetwork") === false));
 }
 
