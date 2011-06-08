@@ -81,6 +81,7 @@ calStorageCalendar.prototype = {
     QueryInterface: function (aIID) {
         return doQueryInterface(this, calStorageCalendar.prototype, aIID,
                                 [Components.interfaces.calICalendarProvider,
+                                 Components.interfaces.calIOfflineStorage,
                                  Components.interfaces.calISyncWriteCalendar]);
     },
 
@@ -837,6 +838,40 @@ calStorageCalendar.prototype = {
 
         //var profEndTime = Date.now();
         //dump ("++++ getItems took: " + (profEndTime - profStartTime) + " ms\n");
+    },
+
+    //
+    // calIOfflineStorage interface
+    //
+    addOfflineItem: function(aItem, aListener) {
+        cal.LOG("Storage: addOfflineItem unimplemented");
+        this.notifyOperationComplete(aListener,
+                                     Components.results.NS_OK,
+                                     Components.interfaces.calIOperationListener.ADD,
+                                     aItem.id,
+                                     aItem);
+
+        return null;
+    },
+    modifyOfflineItem: function(aItem, aListener) {
+        cal.LOG("Storage: modifyOfflineItem unimplemented");
+        this.notifyOperationComplete(aListener,
+                                     Components.results.NS_OK,
+                                     Components.interfaces.calIOperationListener.MODIFY,
+                                     aItem.id,
+                                     aItem);
+
+        return null;
+    },
+    deleteOfflineItem: function(aItem, aListener) {
+        cal.LOG("Storage: deleteOfflineItem unimplemented");
+        this.notifyOperationComplete(aListener,
+                                     Components.results.NS_OK,
+                                     Components.interfaces.calIOperationListener.DELETE,
+                                     aItem.id,
+                                     aItem);
+
+        return null;
     },
 
     //
