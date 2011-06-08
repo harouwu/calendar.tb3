@@ -288,6 +288,7 @@ function isCalendarAvailable(aCalendar) {
     return (!aCalendar.getProperty("disabled") &&
             !aCalendar.readOnly &&
             (!getIOService().offline ||
+             aCalendar.getProperty("cache.enabled") ||
              aCalendar.getProperty("requiresNetwork") === false));
 }
 
