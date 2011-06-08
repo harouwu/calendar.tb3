@@ -81,7 +81,6 @@ calStorageCalendar.prototype = {
     QueryInterface: function (aIID) {
         return doQueryInterface(this, calStorageCalendar.prototype, aIID,
                                 [Components.interfaces.calICalendarProvider,
-                                 Components.interfaces.calIOfflineStorage,
                                  Components.interfaces.calISyncWriteCalendar]);
     },
 
