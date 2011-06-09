@@ -36,6 +36,7 @@
 
 #include "nsISupports.idl"
 
+interface nsIMsgIdentity;
 interface nsIURI;
 
 interface calICalendar;
@@ -64,9 +65,9 @@ interface calICalDAVACLCalendarEntry : nsISupports
     void getUserAddresses(out PRUint32 aCount,
                           [array, size_is(aCount), retval] out wstring aAddresses);
     void getUserIdentities(out PRUint32 aCount,
-                           [array, size_is(aCount), retval] out wstring aIdentities);
+                           [array, size_is(aCount), retval] out nsIMsgIdentity aIdentities);
     void getOwnerIdentities(out PRUint32 aCount,
-                            [array, size_is(aCount), retval] out wstring aIdentities);
+                            [array, size_is(aCount), retval] out nsIMsgIdentity aIdentities);
 };
 
 [scriptable, uuid(4778a5a7-b6bb-40ce-b8eb-4c30a58c7aae)]
