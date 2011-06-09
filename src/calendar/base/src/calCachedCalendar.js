@@ -357,12 +357,7 @@ calCachedCalendar.prototype = {
     },
     adoptItem: function(item, listener) {
         if (this.offline) {
-            ASSERT(false, "unexpected!");
-            if (listener) {
-                listener.onOperationComplete(this, Components.interfaces.calIErrors.CAL_IS_READONLY,
-                                             Components.interfaces.calIOperation.ADD, null, null);
-            }
-            return null;
+            return this.adoptOfflineItem(item, listener);
         }
         // Forwarding add/modify/delete to the cached calendar using the calIObserver
         // callbacks would be advantageous, because the uncached provider could implement
@@ -389,15 +384,27 @@ calCachedCalendar.prototype = {
         }
         return this.mUncachedCalendar.adoptItem(item, opListener);
     },
+    adoptOfflineItem: function(item, listener) {
+        var this_ = this;
+        var opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                if (Components.isSuccessCode(status)) {
+                    var storage = this_.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
+                    storage.addOfflineItem(detail, listener);
+                } else if (listener) {
+                    listener.onOperationComplete(this_, status, opType, id, detail);
+                }
+            }
+        };
+        return this.mCachedCalendar.adoptItem(item, opListener);
+    },
 
     modifyItem: function(newItem, oldItem, listener) {
         if (this.offline) {
-            ASSERT(false, "unexpected!");
-            if (listener) {
-                listener.onOperationComplete(this, Components.interfaces.calIErrors.CAL_IS_READONLY,
-                                             Components.interfaces.calIOperation.MODIFY, null, null);
-            }
-            return null;
+            return this.modifyOfflineItem(newItem, listener);
         }
         // Forwarding add/modify/delete to the cached calendar using the calIObserver
         // callbacks would be advantageous, because the uncached provider could implement
@@ -424,15 +431,27 @@ calCachedCalendar.prototype = {
         }
         return this.mUncachedCalendar.modifyItem(newItem, oldItem, opListener);
     },
+    modifyOfflineItem: function(newItem, oldItem, listener) {
+        var this_ = this;
+        var opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                if (Components.isSuccessCode(status)) {
+                    var storage = this_.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
+                    storage.modifyOfflineItem(detail, listener);
+                } else if (listener) {
+                    listener.onOperationComplete(this_, status, opType, id, detail);
+                }
+            }
+        };
+        return this.mCachedCalendar.modifyItem(newItem, oldItem, opListener);
+    },
 
     deleteItem: function(item, listener) {
         if (this.offline) {
-            ASSERT(false, "unexpected!");
-            if (listener) {
-                listener.onOperationComplete(this, Components.interfaces.calIErrors.CAL_IS_READONLY,
-                                             Components.interfaces.calIOperation.DELETE, null, null);
-            }
-            return null;
+            return this.deleteOfflineItem(item, listener);
         }
         // Forwarding add/modify/delete to the cached calendar using the calIObserver
         // callbacks would be advantageous, because the uncached provider could implement
@@ -458,6 +477,11 @@ calCachedCalendar.prototype = {
             }
         }
         return this.mUncachedCalendar.deleteItem(item, opListener);
+    },
+    deleteOfflineItem: function(item, listener) {
+        /* We do not delete the item from the cache, as we will need it when reconciling the cache content and the server content. */
+        var storage = this_.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
+        return storage.deleteOfflineItem(detail, listener);
     }
 };
 (function() {
