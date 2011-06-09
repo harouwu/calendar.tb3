@@ -793,34 +793,47 @@ function minimonthPick(aNewDate) {
 function SCComputeEnableNewItems() {
     let oldValue = SCEnableNewItems;
 
+    let commands = ["calendar_new_event_command",
+                    "calendar_new_event_context_command",
+                    "calendar_new_todo_command",
+                    "calendar_new_todo_context_command",
+                    "calendar_new_todo_todaypane_command"];
+
     SCEnableNewItems = false;
     let cal = getSelectedCalendar();
     if (cal) {
-        if (cal.type == "caldav") {
-            //         dump("cal: " + cal.name + "\n");
-            if (cal.readOnly)
-                SCEnableNewItems = false;
-            else {
+        if (isCalendarWritable(cal)) {
+            if (cal.type == "caldav") {
                 let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                                       .getService(Components.interfaces.nsISupports)
-                                       .wrappedJSObject;
-                let calEntry = aclMgr.calendarEntry(cal.uri);
-                SCEnableNewItems = (calEntry.isCalendarReady()
-                                    && calEntry.userCanAddComponents());
+                                       .getService(Components.interfaces.calICalDAVACLManager);
+                let opListener = {
+                    onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        ASSERT(false, "unexpected!");
+                    },
+                    onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                        if (Components.isSuccessCode(status)) {
+                            SCEnableNewItems = opDetail.userCanAddComponents;
+                        }
+                        else {
+                            SCEnableNewItems = false;
+                        }
+                        if (SCEnableNewItems != oldValue) {
+                            for (let i = 0; i < commands.length; i++) {
+                                goUpdateCommand(commands[i]);
+                            }
+                        }
+                    }
+                };
+                aclMgr.getCalendarEntry(cal, opListener);
+                return;
             }
-        } else {
-            SCEnableNewItems = !cal.readOnly;
+            else {
+                SCEnableNewItems = true;
+            }
         }
     }
 
-    //     dump("enable new items: " + SCEnableNewItems + "\n");
-    //     dump("  url: " + cal.uri.spec + "\n");
     if (SCEnableNewItems != oldValue) {
-        let commands = ["calendar_new_event_command",
-                        "calendar_new_event_context_command",
-                        "calendar_new_todo_command",
-                        "calendar_new_todo_context_command",
-                        "calendar_new_todo_todaypane_command"];
         for (let i = 0; i < commands.length; i++) {
             goUpdateCommand(commands[i]);
         }
@@ -832,15 +845,24 @@ function SCComputeEnableDelete(selectedItems) {
     SCEnableDelete = (selectedItems.length > 0);
 
     let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                           .getService(Components.interfaces.nsISupports)
-                           .wrappedJSObject;
+                           .getService(Components.interfaces.calICalDAVACLManager);
 
     for (let i = 0; i < selectedItems.length; i++) {
         let calendar = selectedItems[i].calendar;
         if (calendar.type == "caldav") {
-            let calEntry = aclMgr.calendarEntry(calendar.uri);
-            SCEnableDelete = (calEntry.isCalendarReady()
-                              && calEntry.userCanDeleteComponents());
+            let calEntry = null;
+            let opListener = {
+                onGetResult: function(calendar, status, itemType, detail, count, items) {
+                    ASSERT(false, "unexpected!");
+                },
+                onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                    /* calentry = opDetail */
+                    calEntry = opDetail;
+                }
+            };
+
+            aclMgr.getCalendarEntry(calendar, opListener);
+            SCEnableDelete = (calEntry && calEntry.userCanDeleteComponents);
         }
     }
 

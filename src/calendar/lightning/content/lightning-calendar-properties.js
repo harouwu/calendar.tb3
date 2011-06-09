@@ -43,21 +43,31 @@ onLoad = function ltn_onLoad() {
 
     /* ACL code */
     if (gCalendar.type == "caldav") {
+        let calAclEntry = null;
         let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                               .getService().wrappedJSObject;
-        let calAclEntry = aclMgr.calendarEntry(gCalendar.uri);
-        let i = 0;
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                calAclEntry = opDetail;
+            }
+        };
+        aclMgr.getCalendarEntry(gCalendar, opListener);
 
         let menuPopup = document.getElementById("email-identity-menupopup");
 
-        while (calAclEntry.ownerIdentities != null && i < calAclEntry.ownerIdentities.length) {
-            addMenuItem(menuPopup, calAclEntry.ownerIdentities[i].identityName, calAclEntry.ownerIdentities[i].key);
-            i++;
+        let ownerIdentities = {};
+        calAclEntry.getOwnerIdentities({}, ownerIdentities);
+        ownerIdentities = ownerIdentities.value;
+        for (let i = 0; i < ownerIdentities.length; i++) {
+            addMenuItem(menuPopup, ownerIdentities[i].identityName, ownerIdentities[i].key);
         }
 
         // This should never happend as the CalDAV server should always return us the proper
         // owner's identity - but, we never know.
-        if (i == 0) {
+        if (ownerIdentities.length == 0) {
             addMenuItem(menuPopup, ltnGetString("lightning", "imipNoIdentity"), "none");
         }
 

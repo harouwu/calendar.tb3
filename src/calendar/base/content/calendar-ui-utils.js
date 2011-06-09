@@ -312,17 +312,25 @@ function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnComm
     let index = -1;
 
     let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                           .getService(Components.interfaces.nsISupports)
-                           .wrappedJSObject;
+                           .getService(Components.interfaces.calICalDAVACLManager);
     for (let i = 0; i < calendars.length; ++i) {
         let calendar = calendars[i];
         /* ACL code */
         let aclIncluded = true;
         if (calendar.type == "caldav") {
-            let entry = aclMgr.calendarEntry(calendar.uri);
+            let entry = null;
+            let opListener = {
+                onGetResult: function(calendar, status, itemType, detail, count, items) {
+                    ASSERT(false, "unexpected!");
+                },
+                onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                    /* calentry = opDetail */
+                    entry = opDetail;
+                }
+            };
+            aclMgr.getCalendarEntry(calendar, opListener);
             let isNew = !(aItem.id);
-            aclIncluded = (!isNew
-                           || (entry.isCalendarReady() && entry.userCanAddComponents()));
+            aclIncluded = (!isNew || (entry && entry.userCanAddComponents));
         }
 
         if (aclIncluded

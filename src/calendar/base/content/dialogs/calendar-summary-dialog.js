@@ -82,15 +82,7 @@ function onLoad() {
     if (isCalendarWritable(calendar)) {
         window.readOnly = false;
     } else {
-        var aclMgr;
-        try {
-            aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                               .getService(Components.interfaces.nsISupports)
-                               .wrappedJSObject;
-        } catch(e) {
-            aclMgr = null;
-        }
-        if (calendar.type == "caldav" && aclMgr) {
+        if (calendar.type == "caldav") {
             var realCalendar = calendar.getProperty("cache.uncachedCalendar");
             if (!realCalendar) {
                 realCalendar = calendar;
@@ -100,12 +92,21 @@ function onLoad() {
             if (cache[item.id]) {
                 /* We don't need to setup an observer here as we know the
                    entry was initialized from calendar-item-editing.js */
-                var compEntry = aclMgr.componentEntry(calendar.uri,
-                                                      cache[item.id].locationPath);
-                if (compEntry && compEntry.isComponentReady()) {
-                    window.readOnly = !(compEntry.userCanModify()
-                                        || compEntry.userCanRespond());
-                }
+                let opListener = {
+                    onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        ASSERT(false, "unexpected!");
+                    },
+                    onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                        if (Components.isSuccessCode(status)) {
+                            if (opDetail) {
+                                window.readOnly = !(opDetail.userCanModify || opDetail.userCanRespond());
+                            }
+                        }
+                    }
+                };
+                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                       .getService(Components.interfaces.calICalDAVACLManager);
+                aclMgr.getItemEntry(calendar, cache[item.id].locationPath, opListener);
             }
         }
     }

@@ -285,19 +285,30 @@ function getCalendarDirectory() {
 function isCalendarWritable(aCalendar) {
     /* ACL code */
     if (aCalendar.type == "caldav") {
+        let entry = null;
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                /* calentry = opDetail */
+                entry = opDetail;
+            }
+        };
+
         let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                               .getService(Components.interfaces.nsISupports)
-                               .wrappedJSObject;
-        let entry = aclMgr.calendarEntry(aCalendar.uri);
-        if (entry.isCalendarReady()) {
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.getCalendarEntry(aCalendar, opListener);
+        if (entry) {
             return (!aCalendar.getProperty("disabled") &&
                     !aCalendar.readOnly &&
-                    (entry.userIsOwner() || entry.userCanAddComponents()) &&
+                    (entry.userIsOwner || entry.userCanAddComponents) &&
                     (!getIOService().offline ||
                      aCalendar.getProperty("cache.enabled") ||
                      aCalendar.getProperty("requiresNetwork") === false));
         }
     }
+    /* /ACL code */
 
     return (!aCalendar.getProperty("disabled") &&
             !aCalendar.readOnly &&

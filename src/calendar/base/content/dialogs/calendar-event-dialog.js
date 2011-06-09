@@ -119,6 +119,7 @@ function goUpdatePasteMenuItems() {
  * dialog controls from the window's item.
  */
 function onLoad() {
+    dump("COUCOU onload\n");
     // first of all retrieve the array of
     // arguments this window has been called with.
     var args = window.arguments[0];
@@ -325,6 +326,7 @@ function onCancel() {
  * @param item      The item to parse information out of.
  */
 function loadDialog(item) {
+    dump("loadDialog COUCOU\n");
     setElementValue("item-title", item.title);
     setElementValue("item-location", item.getProperty("LOCATION"));
 
@@ -1920,27 +1922,32 @@ function updateCalendar() {
     /* ACL code */
     if (calendar.type == "caldav") {
         let wrappedCalendar = calendar.wrappedJSObject;
-        let mgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                            .getService(Components.interfaces.nsISupports)
-                            .wrappedJSObject;
-
-        let componentURL = null;
         if (item.id) {
             let cache = wrappedCalendar.mItemInfoCache;
             if (!cache)
                 cache = wrappedCalendar.mUncachedCalendar.wrappedJSObject.mItemInfoCache;
-            if (cache) {
-                if (cache[item.id]) {
-                    componentURL = cache[item.id].locationPath;
-                    //                     dump("componentURL: " + componentURL + "\n");
-                }
+            if (cache && cache[item.id]) {
+                let componentURL = cache[item.id].locationPath;
+                //                     dump("componentURL: " + componentURL + "\n");
+                let opListener = {
+                    onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        ASSERT(false, "unexpected!");
+                    },
+                    onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                        if (Components.isSuccessCode(status)) {
+                            gComponentACLEntry = opDetail;
+                            dump("acl entry set\n");
+                        }
+                    }
+                };
+                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                       .getService(Components.interfaces.calICalDAVACLManager);
+                aclMgr.getItemEntry(calendar, componentURL, opListener);
             }
             else {
-                dump("no cache found\n");
+                dump("no cache entry found\n");
             }
         }
-
-        gComponentACLEntry = mgr.componentEntry(calendar.uri, componentURL);
     }
     /* /ACL Code */
 }
@@ -2212,7 +2219,7 @@ function saveItem() {
     item.organizer = window.organizer;
 
     item.removeAllAttendees();
-    
+
     // attendeesPresent saves if the attendees are present in the an alarm before deleting all the attendees for sync.
     let attendeesPresent = new Array();
     let organizerPresent = new Array();
@@ -2293,30 +2300,37 @@ function saveItem() {
     // the organizer.
     if (item.calendar.type == "caldav" && item.organizer) {
       // Inverse inc. ACL addition
-      try {
-	var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-	  .getService(Components.interfaces.nsISupports)
-	  .wrappedJSObject;
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                if (Components.isSuccessCode(status)) {
+                    let entry = opDetail;
+	            let found = false;
+	            let identity;
 
-	var entry = aclMgr.calendarEntry(item.calendar.uri);
-	var found = false;
-	var identity;
+                    var userAddresses = {};
+                    entry.getUserAddresses({}, userAddresses);
+                    userAddresses = userAddresses.value;
+	            for (let i = 0; i < userAddresses.length; i++) {
+	                identity = userAddresses[i].toLowerCase();
+	                if (item.organizer.id.toLowerCase() == identity) {
+	                    found = true;
+	                }
+	            }
 
-	for (var i = 0; i < entry.userAddresses.length; i++) {
-	  identity = entry.userAddresses[i].toLowerCase();
-	  if (item.organizer.id.toLowerCase() == identity) {
-	    found = true;
-	  }
-	}
-
-	if (!found && entry.userAddresses.length > 0) {
-	  var organizer = item.organizer.clone();
-	  organizer.setProperty("SENT-BY", entry.userAddresses[0]);
-	  item.organizer = organizer;
-	}
-      } catch (ex) {
-	// No ACL support
-      }
+	            if (!found && userAddresses.length > 0) {
+	                let organizer = item.organizer.clone();
+	                organizer.setProperty("SENT-BY", userAddresses[0]);
+	                item.organizer = organizer;
+	            }
+                }
+            }
+        };
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.getCalendarEntry(calendar, opListener);
     }
     return item;
 }

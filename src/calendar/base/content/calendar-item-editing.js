@@ -231,57 +231,6 @@ function modifyEventWithDialog(aItem, job, aPromptOccurrence, initialDate) {
     }
 }
 
-/* ACL code */
-function itemObserver(componentURL, openArgs) {
-    this.componentURL = componentURL;
-    this.openArgs = openArgs;
-}
-
-itemObserver.prototype = {
-    observe: function(aSubject, aTopic, aData) {
-        if (aData) {
-            var parts = aData.split("/");
-            if (this.componentURL == parts[parts.length-1]) {
-                var obsService = Components.classes["@mozilla.org/observer-service;1"]
-                                           .getService(Components.interfaces.nsIObserverService);
-                obsService.removeObserver(this,
-                                          "caldav-component-acl-loaded", false);
-                obsService.removeObserver(this,
-                                          "caldav-component-acl-reset", false);
-                openEventDialog.apply(window, this.openArgs);
-            }
-        }
-    }
-};
-
-function loadItemCalDAVAclEntry(aclMgr, item, calendar, openArgs) {
-    var realCalendar = calendar.getProperty("cache.uncachedCalendar");
-    if (!realCalendar) {
-        realCalendar = calendar;
-    }
-    realCalendar = realCalendar.wrappedJSObject;
-    var cache = realCalendar.mItemInfoCache;
-    var compEntry = null;
-    if (cache[item.id]) {
-        var compURL = cache[item.id].locationPath;
-        var obsService = Components.classes["@mozilla.org/observer-service;1"]
-                                   .getService(Components.interfaces.nsIObserverService);
-        var obs = new itemObserver(compURL, openArgs);
-        obsService.addObserver(obs, "caldav-component-acl-loaded", false);
-        obsService.addObserver(obs, "caldav-component-acl-reset", false);
-        compEntry = aclMgr.componentEntry(calendar.uri, compURL);
-        if (compEntry.isComponentReady()) {
-            obsService.removeObserver(obs, "caldav-component-acl-loaded", false);
-            obsService.removeObserver(obs, "caldav-component-acl-reset", false);
-        } else {
-            compEntry = null;
-        }
-    }
-
-    return compEntry;
-}
-/* /ACL code */
-
 /* hackich: this is the old implementation of isCalendarWritable, without the
    ACL code */
 function isCalendarAvailable(aCalendar) {
@@ -310,15 +259,42 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
     var compAclEntry = null;
 
     try {
-        var aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                               .getService(Components.interfaces.nsISupports)
-                               .wrappedJSObject;
         if (mode == "modify" && calendar.type == "caldav"
             && isCalendarAvailable(calendar)) {
-            compAclEntry = loadItemCalDAVAclEntry(aclMgr, calendarItem,
-                                                  calendar, arguments);
-            if (!compAclEntry) {
-                return;
+            let realCalendar = calendar.getProperty("cache.uncachedCalendar");
+            if (!realCalendar) {
+                realCalendar = calendar;
+            }
+            realCalendar = realCalendar.wrappedJSObject;
+            var cache = realCalendar.mItemInfoCache;
+            var compEntry = null;
+            if (cache[item.id]) {
+                compURL = cache[item.id].locationPath;
+
+                let thisArgs = arguments;
+                let thisWindow = window;
+                let skippedThisCall = false; /* will be set if entry is not returned synchronously */
+                let opListener = {
+                    onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        ASSERT(false, "unexpected!");
+                    },
+                    onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                        compAclEntry = opDetail;
+                        if (skippedThisCall) {
+                            openEventDialog.apply(thisWindow, thisArgs);
+                        }
+                    }
+                };
+                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                       .getService(Components.interfaces.calICalDAVACLManager);
+                aclMgr.getItemEntry(calendar, itemURL, opListener);
+                skippedThisCall = true;
+                if (!compAclEntry) {
+                    return;
+                }
+            }
+            else {
+                ASSERT(false, "unexpected!");
             }
         }
     }

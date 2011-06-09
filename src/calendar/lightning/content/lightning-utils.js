@@ -84,14 +84,27 @@ function ltnInitMailIdentitiesRow() {
     addMenuItem(menuPopup, ltnGetString("lightning", "imipNoIdentity"), "none");
     /* ACL code */
     if (gCalendar && gCalendar.type == "caldav") {
+        let entry = null;
         let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                               .getService(Components.interfaces.nsISupports)
-                               .wrappedJSObject;
-        let entry = aclMgr.calendarEntry(gCalendar.uri);
-        let identities = entry.ownerIdentities;
-        for (var i = 0; i < identities.length; i++) {
-            var identity = identities[i].QueryInterface(Components.interfaces.nsIMsgIdentity);
-            addMenuItem(menuPopup, identity.identityName, identity.key);
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                entry = opDetail;
+            }
+        };
+        aclMgr.getCalendarEntry(gCalendar, opListener);
+
+        if (entry) {
+            let identities = {};
+            entry.getOwnerIdentities({}, identities);
+            identities = identities.value;
+            for (var i = 0; i < identities.length; i++) {
+                var identity = identities[i].QueryInterface(Components.interfaces.nsIMsgIdentity);
+                addMenuItem(menuPopup, identity.identityName, identity.key);
+            }
         }
     }
     /* /ACL code */
