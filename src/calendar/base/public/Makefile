@@ -46,7 +46,9 @@ XPIDLSRCS = calIAlarm.idl \
             calITodo.idl \
             calITransactionManager.idl \
             calIWeekInfoService.idl \
-            calISchedulingSupport.idl
+            calISchedulingSupport.idl \
+            \
+            calICalDAVACLManager.idl
 
 XPIDLXPTS = $(XPIDLSRCS:.idl=.xpt)
 
