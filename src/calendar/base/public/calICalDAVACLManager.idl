@@ -38,6 +38,7 @@
 
 interface nsIURI;
 
+interface calICalendar;
 interface calIOperationListener;
 
 /**
@@ -45,8 +46,8 @@ interface calIOperationListener;
 [scriptable, uuid(c1ca3255-cba0-4530-8718-b554b4b214c7)]
 interface calICalDAVACLManager : nsISupports
 {
-    void getCalendarEntry(in nsIURI aURI, in calIOperationListener aListener);
-    void getItemEntry(in nsIURI aURI, in AString aItemURL, in calIOperationListener aListener);
+    void getCalendarEntry(in calICalendar aCalendar, in calIOperationListener aListener);
+    void getItemEntry(in calICalendar aCalendar, in AString aItemURL, in calIOperationListener aListener);
 };
 
 [scriptable, uuid(d2b647a3-5b5e-4321-b204-316037e42341)]
