@@ -157,7 +157,7 @@ CalDAVACLManager.prototype = {
                     let calEntry = opDetail;
 
                     if (this_.isOffline) {
-                        let entry = this_._makeOfflineItemEntry(calendar, itemURL);
+                        let entry = this_._makeOfflineItemEntry(calEntry, itemURL);
                         this_._notifyListenerSuccess(listener, calendar, entry);
 
                         return;
@@ -195,7 +195,7 @@ CalDAVACLManager.prototype = {
 
         this._queryItemEntry(calEntry, itemURL, itemOpListener);
     },
-    _makeOfflineItemEntry: function _makeOfflineCalendarEntry(calendar, itemURL) {
+    _makeOfflineItemEntry: function _makeOfflineCalendarEntry(calEntry, itemURL) {
         let offlineEntry = new CalDAVAclItemEntry(calEntry, itemURL);
 
         return offlineEntry;
