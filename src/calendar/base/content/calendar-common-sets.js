@@ -812,7 +812,7 @@ function SCComputeEnableNewItems() {
                     },
                     onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                         if (Components.isSuccessCode(status)) {
-                            SCEnableNewItems = opDetail.userCanAddComponents;
+                            SCEnableNewItems = opDetail.userCanAddItems;
                         }
                         else {
                             SCEnableNewItems = false;
@@ -862,7 +862,7 @@ function SCComputeEnableDelete(selectedItems) {
             };
 
             aclMgr.getCalendarEntry(calendar, opListener);
-            SCEnableDelete = (calEntry && calEntry.userCanDeleteComponents);
+            SCEnableDelete = (calEntry && calEntry.userCanDeleteItems);
         }
     }
 

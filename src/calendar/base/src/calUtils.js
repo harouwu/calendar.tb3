@@ -302,7 +302,7 @@ function isCalendarWritable(aCalendar) {
         if (entry) {
             return (!aCalendar.getProperty("disabled") &&
                     !aCalendar.readOnly &&
-                    (entry.userIsOwner || entry.userCanAddComponents) &&
+                    (entry.userIsOwner || entry.userCanAddItems) &&
                     (!getIOService().offline ||
                      aCalendar.getProperty("cache.enabled") ||
                      aCalendar.getProperty("requiresNetwork") === false));

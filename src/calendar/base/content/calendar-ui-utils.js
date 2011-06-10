@@ -330,7 +330,7 @@ function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnComm
             };
             aclMgr.getCalendarEntry(calendar, opListener);
             let isNew = !(aItem.id);
-            aclIncluded = (!isNew || (entry && entry.userCanAddComponents));
+            aclIncluded = (!isNew || (entry && entry.userCanAddItems));
         }
 
         if (aclIncluded
