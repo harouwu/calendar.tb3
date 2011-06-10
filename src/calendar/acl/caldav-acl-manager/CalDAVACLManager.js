@@ -93,42 +93,76 @@ CalDAVACLManager.prototype = {
     identityCount: 0,
     accountMgr: null,
 
+    get isOffline() {
+        return getIOService().offline;
+    },
+
     getCalendarEntry: function getCalendarEntry(calendar, listener) {
         if (!calendar.uri) {
             dump("fixURL: no URL! - backtrace\n" + STACK());
         }
 
         let url = fixURL(calendar.uri.spec);
+
+        if (this.isOffline) {
+            let entry = this._makeOfflineCalendarEntry(calendar);
+            this._notifyListenerSuccess(listener, calendar, entry);
+
+            return;
+        }
+
         let entry = this.calendars[url];
         if (entry) {
             this._notifyListenerSuccess(listener, calendar, entry);
+            return;
         }
-        else {
-            let this_ = this;
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                    /* calentry = opDetail */
-                    this_.calendars[url] = opDetail;
-                    this_._notifyListenerSuccess(listener, calendar, opDetail);
-                }
-            };
 
-            this._queryCalendarEntry(calendar, opListener);
-        }
-    },
-    getItemEntry: function getItemEntry(calendar, itemURL, listener) {
         let this_ = this;
         let opListener = {
-            onGetResult: function(calendar, status, itemType, detail, count, items) {
+            onGetResult: function(opCalendar, opStatus, opItemType, opDetail, opCount, opItems) {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                if (Components.isSuccessCode(status)) {
+                /* calentry = opDetail */
+                this_.calendars[url] = opDetail;
+                this_._notifyListenerSuccess(listener, calendar, opDetail);
+            }
+        };
+
+        this._queryCalendarEntry(calendar, opListener);
+    },
+    _makeOfflineCalendarEntry: function _makeOfflineCalendarEntry(calendar) {
+        let offlineEntry = new CalDAVAclCalendarEntry(calendar);
+        offlineEntry.hasAccessControl = false;
+        if (!this.accountMgr)
+            this._initAccountMgr();
+        let defaultAccount = this.accountMgr.defaultAccount;
+        let identity = defaultAccount.defaultIdentity;
+        offlineEntry.userAddresses = ["mailto:" + identity.email];
+        offlineEntry.userIdentities = [identity];
+        offlineEntry.ownerIdentities = [identity];
+
+        return offlineEntry;
+    },
+
+    getItemEntry: function getItemEntry(calendar, itemURL, listener) {
+        let this_ = this;
+        let opListener = {
+            onGetResult: function(opCalendar, opStatus, opItemType, opDetail, opCount, opItems) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                if (Components.isSuccessCode(opStatus)) {
                     /* calentry = opDetail */
                     let calEntry = opDetail;
+
+                    if (this_.isOffline) {
+                        let entry = this_._makeOfflineItemEntry(calendar, itemURL);
+                        this_._notifyListenerSuccess(listener, calendar, entry);
+
+                        return;
+                    }
+
                     let itemEntry = calEntry.entries[itemURL];
                     if (itemEntry) {
                         listener.onOperationComplete(calendar, Components.results.NS_OK,
@@ -146,7 +180,7 @@ CalDAVACLManager.prototype = {
     },
     _createItemEntry: function _createItemEntry(calEntry, itemURL, listener) {
         let itemOpListener = {
-            onGetResult: function(calendar, status, itemType, detail, count, items) {
+            onGetResult: function(opCalendar, opStatus, opItemType, opDetail, opCount, opItems) {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
@@ -160,6 +194,11 @@ CalDAVACLManager.prototype = {
         };
 
         this._queryItemEntry(calEntry, itemURL, itemOpListener);
+    },
+    _makeOfflineItemEntry: function _makeOfflineCalendarEntry(calendar, itemURL) {
+        let offlineEntry = new CalDAVAclItemEntry(calEntry, itemURL);
+
+        return offlineEntry;
     },
 
     onDAVQueryComplete: function onDAVQueryComplete(status, url, headers,  response, data) {
