@@ -724,7 +724,7 @@ CalDAVAclCalendarEntry.prototype = {
     uri: null,
     entries: null,
 
-    userIsOwner: function userIsOwner() {
+    get userIsOwner() {
         let result = false;
 
         let i = 0;
@@ -745,13 +745,13 @@ CalDAVAclCalendarEntry.prototype = {
 
         return result;
     },
-    userCanAddItems: function userCanAddItems() {
+    get userCanAddItems() {
         // dump("has access control: " + this.hasAccessControl + "\n");
         return (!this.hasAccessControl
                 || (this.userPrivileges.indexOf("{DAV:}bind")
                     > -1));
     },
-    userCanDeleteItems: function userCanAddItems() {
+    get userCanDeleteItems() {
         // dump("has access control: " + this.hasAccessControl + "\n");
         // if (this.userPrivileges)
         // dump("indexof unbind: "
@@ -811,10 +811,10 @@ CalDAVAclItemEntry.prototype = {
     url: null,
     userPrivileges: null,
 
-    userIsOwner: function userIsOwner() {
+    get userIsOwner() {
         return this.parentCalendarEntry.userIsOwner();
     },
-    userCanModify: function userCanModify() {
+    get userCanModify() {
         // dump("this.url: " + this.url + "\n");
         // dump("this.userPrivileges: " + this.userPrivileges + "\n");
         // dump("this.parentCalendarEntry.userPrivileges: "
@@ -832,19 +832,19 @@ CalDAVAclItemEntry.prototype = {
 
         return result;
     },
-    userCanRespond: function userCanRespond() {
+    get userCanRespond() {
         return (!this.parentCalendarEntry.hasAccessControl
                 || (this.userPrivileges
                         .indexOf("{urn:inverse:params:xml:ns:inverse-dav}respond-to-component")
                     > -1));
     },
-    userCanViewAll: function userCanViewAll() {
+    get userCanViewAll() {
         return (!this.parentCalendarEntry.hasAccessControl
                 ||  (this.userPrivileges
                          .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-whole-component")
                      > -1));
     },
-    userCanViewDAndT: function userCanViewDAndT() {
+    get userCanViewDateAndTime() {
         return (!this.parentCalendarEntry.hasAccessControl
                 || (this.userPrivileges
                         .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-date-and-time")
