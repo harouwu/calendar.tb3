@@ -119,7 +119,6 @@ function goUpdatePasteMenuItems() {
  * dialog controls from the window's item.
  */
 function onLoad() {
-    dump("COUCOU onload\n");
     // first of all retrieve the array of
     // arguments this window has been called with.
     var args = window.arguments[0];
@@ -326,7 +325,6 @@ function onCancel() {
  * @param item      The item to parse information out of.
  */
 function loadDialog(item) {
-    dump("loadDialog COUCOU\n");
     setElementValue("item-title", item.title);
     setElementValue("item-location", item.getProperty("LOCATION"));
 
@@ -1936,7 +1934,6 @@ function updateCalendar() {
                     onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                         if (Components.isSuccessCode(status)) {
                             gComponentACLEntry = opDetail;
-                            dump("acl entry set\n");
                         }
                     }
                 };
