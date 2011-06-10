@@ -404,7 +404,7 @@ calCachedCalendar.prototype = {
 
     modifyItem: function(newItem, oldItem, listener) {
         if (this.offline) {
-            return this.modifyOfflineItem(newItem, listener);
+            return this.modifyOfflineItem(newItem, oldItem, listener);
         }
         // Forwarding add/modify/delete to the cached calendar using the calIObserver
         // callbacks would be advantageous, because the uncached provider could implement
