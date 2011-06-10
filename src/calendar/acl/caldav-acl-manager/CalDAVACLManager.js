@@ -762,7 +762,8 @@ CalDAVAclCalendarEntry.prototype = {
     }
 };
 
-function CalDAVAclItemEntry(url) {
+function CalDAVAclItemEntry(calendarEntry, url) {
+    this.parentCalendarEntry = calendarEntry;
     this.url = url;
 }
 
