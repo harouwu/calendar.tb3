@@ -480,8 +480,8 @@ calCachedCalendar.prototype = {
     },
     deleteOfflineItem: function(item, listener) {
         /* We do not delete the item from the cache, as we will need it when reconciling the cache content and the server content. */
-        var storage = this_.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
-        return storage.deleteOfflineItem(detail, listener);
+        var storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
+        return storage.deleteOfflineItem(item, listener);
     }
 };
 (function() {
