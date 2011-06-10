@@ -56,7 +56,7 @@ interface calICalDAVACLCalendarEntry : nsISupports
 {
     readonly attribute boolean hasAccessControl;
 
-    readonly attribute boolean serIsOwner;
+    readonly attribute boolean userIsOwner;
     readonly attribute boolean userCanAddItems;
     readonly attribute boolean userCanDeleteItems;
 
