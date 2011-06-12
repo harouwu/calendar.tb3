@@ -138,9 +138,12 @@ CalDAVACLManager.prototype = {
             this._initAccountMgr();
         let defaultAccount = this.accountMgr.defaultAccount;
         let identity = defaultAccount.defaultIdentity;
-        offlineEntry.userAddresses = ["mailto:" + identity.email];
-        offlineEntry.userIdentities = [identity];
-        offlineEntry.ownerIdentities = [identity];
+        if(identity!=null)
+        {
+            offlineEntry.userAddresses = ["mailto:" + identity.email];
+            offlineEntry.userIdentities = [identity];
+            offlineEntry.ownerIdentities = [identity];
+        }
 
         return offlineEntry;
     },
