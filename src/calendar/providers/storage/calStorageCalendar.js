@@ -639,7 +639,7 @@ calStorageCalendar.prototype = {
         var asOccurrences = ((aItemFilter & kCalICalendar.ITEM_FILTER_CLASS_OCCURRENCES) != 0);
         var wantOfflineDeletedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_DELETED) != 0);
         var wantOfflineCreatedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_CREATED) != 0);
-        var wantOfflineModifiedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_CREATED) != 0);
+        var wantOfflineModifiedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_MODIFIED) != 0);
         
         if (!wantEvents && !wantTodos) {
             // nothing to do
@@ -754,12 +754,10 @@ calStorageCalendar.prototype = {
             sp.range_end = endTime;
             sp.start_offset = aRangeStart ? aRangeStart.timezoneOffset * USECS_PER_SECOND : 0;
             sp.end_offset = aRangeEnd ? aRangeEnd.timezoneOffset * USECS_PER_SECOND : 0;
-            if(wantOfflineDeletedItems)
-                sp.offline_delete_flag = "d";
-            else
-                sp.offline_delete_flag = "";
-            sp.offline_created_flag = "c";//return created by default
-            sp.offline_modified_flag = "m";//return modified by default
+            sp.offline_journal = null;
+            if(wantOfflineDeletedItems) sp.offline_journal = "d";
+            if(wantOfflineCreatedItems) sp.offline_journal = "c";
+            if(wantOfflineModifiedItems) sp.offline_journal = "m";
             
             try {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
@@ -998,9 +996,8 @@ calStorageCalendar.prototype = {
             "  (("+floatingEventStart+" < :range_end + :end_offset) OR " +
             "   ("+nonFloatingEventStart+" < :range_end)) " +
             " AND cal_id = :cal_id AND flags & 16 == 0 AND recurrence_id IS NULL" +
-            " AND (((ifnull(offline_journal, '') = :offline_delete_flag) )" +
-            "   OR ((ifnull(offline_journal, '') = :offline_created_flag) )" +
-            "   OR ((ifnull(offline_journal, '') = :offline_modified_flag) ))"
+            " AND ((:offline_journal IS NULL AND (offline_journal is NULL OR offline_journal != 'd')) " +
+            " OR (offline_journal = :offline_journal))"
             );
        /**
         * WHERE (due > rangeStart AND start < rangeEnd) OR
