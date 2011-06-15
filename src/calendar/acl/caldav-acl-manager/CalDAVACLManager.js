@@ -534,7 +534,7 @@ CalDAVACLManager.prototype = {
 
             // We add identities associated to this calendar to Thunderbird's
             // list of identities only if we are actually the owner of the calendar.
-            if (calendar.userIsOwner()) {
+            if (calendar.userIsOwner) {
                 this.accountMgr.defaultAccount.addIdentity(newIdentity);
             }
             this.identityCount++;
@@ -815,7 +815,7 @@ CalDAVAclItemEntry.prototype = {
     userPrivileges: null,
 
     get userIsOwner() {
-        return this.parentCalendarEntry.userIsOwner();
+        return this.parentCalendarEntry.userIsOwner;
     },
     get userCanModify() {
         // dump("this.url: " + this.url + "\n");
