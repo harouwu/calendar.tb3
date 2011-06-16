@@ -464,7 +464,7 @@ calStorageCalendar.prototype = {
             // this is definitely an error
             return reportError("ID for modifyItem item is null");
         }
-        var oldOfflineFlag = this.getOfflineJournalFlag(aOldItem);
+        var oldOfflineFlag = this.getOfflineJournalFlag(aOldItem); //A hack coz modify would delete all the row info
         // Ensure that we're looking at the base item if we were given an
         // occurrence.  Later we can optimize this.
         var modifiedItem = aNewItem.parentItem.clone();
@@ -606,6 +606,7 @@ calStorageCalendar.prototype = {
     getItems_: function cSC_getItems_(aItemFilter, aCount,
                                       aRangeStart, aRangeEnd, aListener)
     {
+      //  dump("[GetItems Init Call] Flag is : " + aItemFilter + "****\n");
         //var profStartTime = Date.now();
         if (!aListener)
             return;
@@ -758,7 +759,6 @@ calStorageCalendar.prototype = {
             if(wantOfflineDeletedItems) sp.offline_journal = "d";
             if(wantOfflineCreatedItems) sp.offline_journal = "c";
             if(wantOfflineModifiedItems) sp.offline_journal = "m";
-            
             try {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
                     let row = this.mSelectNonRecurringEventsByRange.row;
@@ -849,6 +849,7 @@ calStorageCalendar.prototype = {
     },
 
     getOfflineJournalFlag: function cSC_getOfflineJournalFlag(aItem){
+        if (aItem == null) return null;
         var aID = aItem.id;
         let flag = null;
         // try events first
@@ -869,8 +870,7 @@ calStorageCalendar.prototype = {
     },
     
     setOfflineJournalFlag: function cSC_setOfflineJournalFlag(aItem, flag){
-        var item = aItem.clone();
-        var aID = item.id;
+        var aID = aItem.id;
         
         this.prepareStatement(this.mEditOfflineFlag);
         this.mEditOfflineFlag.params.id = aID;
@@ -894,7 +894,6 @@ calStorageCalendar.prototype = {
     },
     modifyOfflineItem: function(aItem, aListener) {
         var oldOfflineJournalFlag = this.getOfflineJournalFlag(aItem);
-        dump("[Inside modifyOfflineItem] Offline Journal Flag " + oldOfflineJournalFlag + "\n");
         var newOfflineJournalFlag = "m";
         if(oldOfflineJournalFlag == "c" || oldOfflineJournalFlag=="d")
         {
@@ -904,7 +903,6 @@ calStorageCalendar.prototype = {
         {
             this.setOfflineJournalFlag(aItem,newOfflineJournalFlag);
         }
-        dump("[modify offline item]***" + aItem.id);
         
         this.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
@@ -939,6 +937,15 @@ calStorageCalendar.prototype = {
                                      aItem.id,
                                      aItem);
 
+        return null;
+    },
+    resetItemOfflineFlag: function(aItem, aListener){
+        this.setOfflineJournalFlag(aItem,null);
+        this.notifyOperationComplete(aListener,
+                                      Components.results.NS_OK,
+                                      Components.interfaces.calIOperationListener.MODIFY,
+                                      aItem.id,
+                                      aItem);
         return null;
     },
 
