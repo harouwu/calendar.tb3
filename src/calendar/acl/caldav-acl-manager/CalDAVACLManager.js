@@ -84,6 +84,8 @@ function cloneData(oldData) {
 
 function CalDAVACLManager() {
     this.calendars = {};
+    this.pendingCalendarOperations = {};
+    this.pendingItemOperations = {};
     this.identityCount = 0;
     this.accountMgr = null;
 }
@@ -92,6 +94,8 @@ CalDAVACLManager.prototype = {
     calendars: null,
     identityCount: 0,
     accountMgr: null,
+    pendingCalendarOperations: null,
+    pendingItemOperations: null,
 
     get isOffline() {
         return getIOService().offline;
@@ -117,6 +121,13 @@ CalDAVACLManager.prototype = {
             return;
         }
 
+        let pendingData = { calendar: calendar, listener: listener };
+        if (this.pendingCalendarOperations[url]) {
+            this.pendingCalendarOperations[url].push(pendingData);
+            return;
+        }
+
+        this.pendingCalendarOperations[url] = [pendingData];
         let this_ = this;
         let opListener = {
             onGetResult: function(opCalendar, opStatus, opItemType, opDetail, opCount, opItems) {
@@ -125,7 +136,10 @@ CalDAVACLManager.prototype = {
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                 /* calentry = opDetail */
                 this_.calendars[url] = opDetail;
-                this_._notifyListenerSuccess(listener, calendar, opDetail);
+                for each (let data in this_.pendingCalendarOperations[url]) {
+                    this_._notifyListenerSuccess(data.listener, data.calendar, opDetail);
+                }
+                delete this_.pendingCalendarOperations[url];
             }
         };
 
@@ -138,8 +152,7 @@ CalDAVACLManager.prototype = {
             this._initAccountMgr();
         let defaultAccount = this.accountMgr.defaultAccount;
         let identity = defaultAccount.defaultIdentity;
-        if(identity!=null)
-        {
+        if (identity!=null) {
             offlineEntry.userAddresses = ["mailto:" + identity.email];
             offlineEntry.userIdentities = [identity];
             offlineEntry.ownerIdentities = [identity];
@@ -182,6 +195,16 @@ CalDAVACLManager.prototype = {
         this.getCalendarEntry(calendar, opListener);
     },
     _createItemEntry: function _createItemEntry(calEntry, itemURL, listener) {
+        let pendingData = { calendar: calEntry.calendar, listener: listener, itemURL: itemURL };
+        let url = fixURL(calEntry.calendar.uri.spec) + itemURL;
+        if (this.pendingItemOperations[url]) {
+            this.pendingItemOperations[url].push(pendingData);
+            return;
+        }
+
+        this.pendingItemOperations[url] = [pendingData];
+
+        let this_ = this;
         let itemOpListener = {
             onGetResult: function(opCalendar, opStatus, opItemType, opDetail, opCount, opItems) {
                 ASSERT(false, "unexpected!");
@@ -189,10 +212,14 @@ CalDAVACLManager.prototype = {
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                 /* itemEntry = opDetail */
                 calEntry.entries[itemURL] = opDetail;
-                listener.onOperationComplete(calEntry.calendar, Components.results.NS_OK,
-                                             Components.interfaces.calIOperationListener.GET,
-                                             itemURL,
-                                             opDetail);
+
+                for each (let data in this_.pendingItemOperations[url]) {
+                    listener.onOperationComplete(data.calendar, Components.results.NS_OK,
+                                                 Components.interfaces.calIOperationListener.GET,
+                                                 data.itemURL,
+                                                 opDetail);
+                }
+                delete this_.pendingItemOperations[url];
             }
         };
 
@@ -204,11 +231,9 @@ CalDAVACLManager.prototype = {
         return offlineEntry;
     },
 
-    onDAVQueryComplete: function onDAVQueryComplete(status, url, headers,  response, data) {
-        // dump("callback for method: " + data.method + "\n");
+    onDAVQueryComplete: function onDAVQueryComplete(status, url, headers, response, data) {
         /* Warning, the url returned as parameter is not always the calendar URL
          since we also query user principals and items. */
-        let fixedURL = fixURL(data.calendar.uri.spec);
         if (status > 498) {
             dump("an anomally occured during request '" + data.method + "'.\n" + "  Code: " + status + "\n");
             data.listener.onOperationComplete(data.calendar,
@@ -271,7 +296,8 @@ CalDAVACLManager.prototype = {
             newData["method"] = "collection-set";
             this.xmlRequest(url, "PROPFIND", propfind,
                             {'content-type': "application/xml; charset=utf-8",
-                             'depth': "0"}, newData);
+                             'depth': "0"},
+                            newData);
         }
         else
             this._markWithNoAccessControl(data);
@@ -591,12 +617,15 @@ CalDAVACLManager.prototype = {
     /* component controller */
     _queryItemEntry: function _queryItem(calEntry, itemURL, listener) {
         let entry = new CalDAVAclItemEntry(calEntry, itemURL);
-        let data = {method: "item-privilege-set", entry: entry, listener: listener};
+        let data = {calendar: calEntry.calendar, method: "item-privilege-set", entry: entry, listener: listener};
 
-        // dump("queryCompoennt\n");
+        let url = fixURL(calEntry.calendar.uri.spec) + itemURL;
         let propfind = ("<?xml version='1.0' encoding='UTF-8'?>\n"
                         + "<D:propfind xmlns:D='DAV:'><D:prop><D:current-user-privilege-set/></D:prop></D:propfind>");
-        this.xmlRequest(url, "PROPFIND", propfind, data);
+        this.xmlRequest(url, "PROPFIND", propfind,
+                        {'content-type': "application/xml; charset=utf-8",
+                         'depth': "0"},
+                        data);
     },
     _itemPrivilegeSetCallback: function
     _itemPrivilegeSetCallback(status, url, headers, response, data) {
@@ -626,85 +655,87 @@ CalDAVACLManager.prototype = {
 
         return privileges;
     },
-    xmlRequest: function xmlRequest(url, method, parameters, headers, data) {
-        let request = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                                .createInstance(Components.interfaces.nsIJSXMLHttpRequest);
-        //         dump("method: " + method + "\n");
-        //         dump("url: " + url + "\n");
-        request.open(method, url, true);
+    xmlRequest: function xmlRequest(url, method, body, headers, data) {
+        let channel = getIOService().newChannelFromURI(makeURL(url));
+        let httpChannel = channel.QueryInterface(Components.interfaces.nsIHttpChannel);
+        httpChannel.loadFlags |= Components.interfaces.nsIRequest.LOAD_BYPASS_CACHE;
+
+        let callbacks = {};
+        callbacks.getInterface = cal.InterfaceRequestor_getInterface;
+        httpChannel.notificationCallbacks = callbacks;
+
+        httpChannel.setRequestHeader("accept", "text/xml", false);
+        httpChannel.setRequestHeader("accept-charset", "utf-8,*;q=0.1", false);
         if (headers) {
             for (let header in headers) {
-                request.setRequestHeader(header, headers[header]);
+                httpChannel.setRequestHeader(header, headers[header], true);
             }
         }
-        request.url = fixURL(url);
-        request.client = this;
-        request.method = method;
-        request.callbackData = data;
 
-        request.onreadystatechange = function() {
-            if (request.readyState == 4) {
-                if (request.client) {
-                    let status;
-                    let textHeaders;
-                    try {
-                        status = request.status;
-                        if (status == 0) {
-                            status = 499;
-                        }
-                        else {
-                            textHeaders = request.getAllResponseHeaders();
-                        }
-                    }
-                    catch(e) {
-                        dump("CalDAVACLManager: trapped exception: "
-                             + e + "\n");
-                        status = 499;
-                        textHeaders = "";
-                    }
-                    let responseText;
-                    let headers = {};
-                    try {
-                        if (status == 499) {
-                            responseText = "";
-                            dump("xmlRequest: received status 499 for url: "
-                                 + request.url + "; method: " + method + "\n");
-                        }
-                        else {
-                            responseText = request.responseText;
-                            let headersArray = textHeaders.split("\n");
-                            for (let i = 0; i < headersArray.length; i++) {
-                                let line = headersArray[i].replace(/\r$/, "", "g");
-                                if (line.length) {
-                                    let elems = line.split(":");
-                                    let key = elems[0].toLowerCase();
-                                    let value = elems[1].replace(/(^[         ]+|[         ]+$)/, "", "g");
-                                    headers[key] = value;
-                                }
-                            }
-                        }
-                    }
-                    catch(e) {
-                        dump("CAlDAVAclManager.js: an exception occured\n" + e + "\n"
-                             + e.fileName + ":" + e.lineNumber + "\n"
-                             + "url: " + request.url + "\n");
-                    }
-                    request.client.onDAVQueryComplete(status,
-                                                      request.url,
-                                                      headers,
-                                                      responseText,
-                                                      request.callbackData);
-                }
-                request.client = null;
-                request.url = null;
-                request.callbackData = null;
-                request.onreadystatechange = null;
-                request = null;
+        if (body) {
+            httpChannel = httpChannel.QueryInterface(Components.interfaces.nsIUploadChannel);
+            let converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
+                                      .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+            converter.charset = "UTF-8";
+            let stream = converter.convertToInputStream(body);
+            let contentType = headers["content-type"];
+            if (!contentType) {
+                contentType = "text/plain; charset=utf-8";
             }
+            httpChannel.setUploadStream(stream, contentType, -1);
+        }
+
+        let this_ = this;
+        let listener = {};
+        listener.onStreamComplete = function (aLoader, aContext, aStatus, aResultLength, aResult) {
+            let request = aLoader.request.QueryInterface(Components.interfaces.nsIHttpChannel);
+            let status;
+            try {
+                status = request.responseStatus;
+                if (status == 0) {
+                    status = 499;
+                }
+            }
+            catch(e) {
+                dump("CalDAVACLManager: trapped exception: "
+                     + e + "\n");
+                status = 499;
+            }
+            let responseText = "";
+            let responseHeaders = {};
+            try {
+                if (status == 499) {
+                    dump("xmlRequest: received status 499 for url: " + url + "; method: " + method + "\n");
+                }
+                else {
+                    if (aResultLength > 0) {
+                        let resultConverter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
+                                                        .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+                        resultConverter.charset ="UTF-8";
+                        responseText = resultConverter.convertFromByteArray(aResult, aResultLength);
+                    }
+                    let visitor = {};
+                    visitor.visitHeader = function(aHeader, aValue) {
+                        let key = aHeader.toLowerCase();
+                        responseHeaders[key] = aValue.replace(/(^[ 	]+|[ 	]+$)/, "", "g");
+                    };
+                    request.visitResponseHeaders(visitor);
+                }
+            }
+            catch(e) {
+                dump("CAlDAVAclManager.js: an exception occured\n" + e + "\n"
+                     + e.fileName + ":" + e.lineNumber + "\n"
+                     + "url: " + request.url + "\n");
+            }
+            this_.onDAVQueryComplete(status, url, responseHeaders, responseText, data);
         };
 
-        request.send(parameters);
-        // dump("xmlrequest sent: '" + method + "\n");
+        let loader = Components.classes["@mozilla.org/network/stream-loader;1"]
+                               .createInstance(Components.interfaces.nsIStreamLoader);
+        loader.init(listener);
+        /* If set too early, the method can change to "PUT" when initially set to "PROPFIND"... */
+        httpChannel.requestMethod = method;
+        httpChannel.asyncOpen(loader, httpChannel);
     },
 
     QueryInterface: function(aIID) {
