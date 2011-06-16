@@ -641,7 +641,7 @@ calStorageCalendar.prototype = {
         var wantOfflineDeletedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_DELETED) != 0);
         var wantOfflineCreatedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_CREATED) != 0);
         var wantOfflineModifiedItems = ((aItemFilter & kCalICalendar.ITEM_FILTER_OFFLINE_MODIFIED) != 0);
-        
+
         if (!wantEvents && !wantTodos) {
             // nothing to do
             this.notifyOperationComplete(aListener,
@@ -756,9 +756,9 @@ calStorageCalendar.prototype = {
             sp.start_offset = aRangeStart ? aRangeStart.timezoneOffset * USECS_PER_SECOND : 0;
             sp.end_offset = aRangeEnd ? aRangeEnd.timezoneOffset * USECS_PER_SECOND : 0;
             sp.offline_journal = null;
-            if(wantOfflineDeletedItems) sp.offline_journal = "d";
-            if(wantOfflineCreatedItems) sp.offline_journal = "c";
-            if(wantOfflineModifiedItems) sp.offline_journal = "m";
+            if (wantOfflineDeletedItems) sp.offline_journal = "d";
+            if (wantOfflineCreatedItems) sp.offline_journal = "c";
+            if (wantOfflineModifiedItems) sp.offline_journal = "m";
             try {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
                     let row = this.mSelectNonRecurringEventsByRange.row;
@@ -865,19 +865,19 @@ calStorageCalendar.prototype = {
         } finally {
             this.mSelectEvent.reset();
         }
-        
+
         return flag;
     },
-    
+
     setOfflineJournalFlag: function cSC_setOfflineJournalFlag(aItem, flag){
         var aID = aItem.id;
-        
+
         this.prepareStatement(this.mEditOfflineFlag);
         this.mEditOfflineFlag.params.id = aID;
         this.mEditOfflineFlag.params.offline_journal = flag;
         this.mEditOfflineFlag.execute();
     },
-    
+
     //
     // calIOfflineStorage interface
     //
@@ -889,46 +889,36 @@ calStorageCalendar.prototype = {
                                      Components.interfaces.calIOperationListener.ADD,
                                      aItem.id,
                                      aItem);
-
-        return null;
     },
     modifyOfflineItem: function(aItem, aListener) {
         var oldOfflineJournalFlag = this.getOfflineJournalFlag(aItem);
         var newOfflineJournalFlag = "m";
-        if(oldOfflineJournalFlag == "c" || oldOfflineJournalFlag=="d")
-        {
+        if (oldOfflineJournalFlag == "c" || oldOfflineJournalFlag=="d") {
             //Do nothing since a flag of "created" or "deleted" exists
         }
-        else
-        {
+        else {
             this.setOfflineJournalFlag(aItem,newOfflineJournalFlag);
         }
-        
+
         this.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
                                      Components.interfaces.calIOperationListener.MODIFY,
                                      aItem.id,
                                      aItem);
-
-        return null;
     },
     deleteOfflineItem: function(aItem, aListener) {
         var oldOfflineJournalFlag = this.getOfflineJournalFlag(aItem);
         var newOfflineJournalFlag = "d";
-        if(oldOfflineJournalFlag)
-        {
+        if (oldOfflineJournalFlag) {
             //delete item if flag is c
-            if(oldOfflineJournalFlag == "c")
-            {
-                this.deleteItemById(aItem.id);        
+            if (oldOfflineJournalFlag == "c") {
+                this.deleteItemById(aItem.id);
             }
-            else if(oldOfflineJournalFlag == "m")
-            {
+            else if (oldOfflineJournalFlag == "m") {
                 this.setOfflineJournalFlag(aItem,"d");
             }
         }
-        else
-        {
+        else {
             this.setOfflineJournalFlag(aItem,"d");
         }
         this.notifyOperationComplete(aListener,
@@ -936,17 +926,14 @@ calStorageCalendar.prototype = {
                                      Components.interfaces.calIOperationListener.DELETE,
                                      aItem.id,
                                      aItem);
-
-        return null;
     },
     resetItemOfflineFlag: function(aItem, aListener){
         this.setOfflineJournalFlag(aItem,null);
         this.notifyOperationComplete(aListener,
-                                      Components.results.NS_OK,
-                                      Components.interfaces.calIOperationListener.MODIFY,
-                                      aItem.id,
-                                      aItem);
-        return null;
+                                     Components.results.NS_OK,
+                                     Components.interfaces.calIOperationListener.MODIFY,
+                                     aItem.id,
+                                     aItem);
     },
 
     //
