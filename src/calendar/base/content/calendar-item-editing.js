@@ -371,7 +371,7 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
         && (mode == "new"
             || (mode == "modify"
                 && !isInvitation
-                && (!compAclEntry || compAclEntry.userCanModify())))) {
+                && (!compAclEntry || compAclEntry.userCanModify)))) {
         /* /ACL code */
         url = "chrome://calendar/content/calendar-event-dialog.xul";
     } else {

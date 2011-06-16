@@ -99,7 +99,7 @@ function onLoad() {
                     onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                         if (Components.isSuccessCode(status)) {
                             if (opDetail) {
-                                window.readOnly = !(opDetail.userCanModify || opDetail.userCanRespond());
+                                window.readOnly = !(opDetail.userCanModify || opDetail.userCanRespond);
                             }
                         }
                     }
