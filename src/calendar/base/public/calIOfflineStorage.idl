@@ -57,7 +57,7 @@ interface calIOfflineStorage : nsISupports
      * modifyOfflineItem mark the item of which the id is passed as parameter as
      * modified.
      *
-     * @param aId         id of the item to add
+     * @param aId         id of the item to modify
      * @param aListener   where to call back the results
      */
     void modifyOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
@@ -66,8 +66,16 @@ interface calIOfflineStorage : nsISupports
      * deleteOfflineItem mark the item of which the id is passed as parameter as
      * deleted.
      *
-     * @param aId         id of the item to add
+     * @param aId         id of the item to delete
      * @param aListener   where to call back the results
      */
     void deleteOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
+
+    /**
+     * resetItemOfflineFlag remove any offline flag from the item record.
+     *
+     * @param aId         id of the item to reset
+     * @param aListener   where to call back the results
+     */
+    void resetItemOfflineFlag(in calIItemBase aItem, in calIOperationListener aListener);
 };
