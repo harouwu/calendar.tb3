@@ -37,6 +37,7 @@
 
 Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
 
+const calICalendar = Components.interfaces.calICalendar;
 function calCachedCalendarObserverHelper(home, isCachedObserver) {
     this.home = home;
     this.isCachedObserver = isCachedObserver;
@@ -307,12 +308,104 @@ calCachedCalendar.prototype = {
         return this.mPendingSync;
     },
 
+    handleDeletions: function(){
+        var this_ = this;
+        //delete Listener
+        let deleteListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items){
+                for each(var aItem in items){
+                     dump("Inside for loop --> Deleting " + aItem.id);
+                     var listener2 = {
+                         onGetResult: function(calendar, status, itemType, detail, count, items){
+                             
+                         },
+                         onOperationComplete: function(calendar, status, opType, id, detail){
+                             
+                         }
+                     }
+                     this_.deleteItem(aItem ,listener2);
+                 }
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail){
+                this_.refresh();
+            }
+        }
+        
+        this_.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_DELETED | calICalendar.ITEM_FILTER_TYPE_EVENT ,
+                                      0, null, null, deleteListener);
+                                         
+    },
+    
     onOfflineStatusChanged: function cCC_onOfflineStatusChanged(aNewState) {
         if (aNewState) {
             // Going offline: (XXX get items before going offline?) => we may ask the user to stay online a bit longer
         } else {
+            let this_ = this;
+            //this_.refresh();
             // Going online (start replaying changes to the remote calendar)
-            this.refresh();
+            dump("Going online calCachedCalendar\n");
+            dump("***calling getItems with Filter " + calICalendar.ITEM_FILTER_OFFLINE_CREATED + "***\n");
+            let opListener = {
+                onGetResult: function(calendar, status, itemType, detail, count, items) {
+                    //Delete the items
+                    dump("calCachedCalendar => received " + count + " items");
+                    for each(var aItem in items){
+                        dump("Inside for loop --> Creating " + aItem.id);
+                        var listener2 = {
+                            onGetResult: function(calendar, status, itemType, detail, count, items){
+                                
+                            },
+                            onOperationComplete: function(calendar, status, opType, id, detail){
+                                
+                            }
+                        }
+                        this_.addItem(aItem ,listener2);
+                    }
+                },
+                onOperationComplete: function(calendar, status, opType, id, detail) {
+                    if (Components.isSuccessCode(status)) {
+                       // this_.mCachedCalendar.addItem(detail, listener);
+                    //   this_.refresh();
+                       //move to modifications
+                       let modificationListener = {
+                        onGetResult: function(calendar, status, itemType, detail, count, items) {
+                            dump("Trying to sync modified entries [One Way only]");
+                            for each(var aItem in items){
+                                dump("Inside for loop --> Modifying " + aItem.id);
+                                let listener2 = {
+                                    onGetResult: function(calendar, status, itemType, detail, count, items){
+                                        
+                                    },
+                                    onOperationComplete: function(calendar, status, opType, id, detail){
+                                        var storage = this_.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
+                                        let listener3 = {
+                                        onGetResult: function(calendar, status, itemType, detail, count, items){
+                                                
+                                            },
+                                        onOperationComplete: function(calendar, status, opType, id, detail){
+                                            }
+                                        }
+                                        storage.resetItemOfflineFlag(detail, listener3);
+                                    }
+                                }
+                                
+                                this_.modifyItem(aItem, aItem,listener2);
+                            }
+                        },
+                        onOperationComplete: function(calendar, status, opType, id, detail){
+                            this_.handleDeletions();
+                        }
+                       }
+                       this_.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_MODIFIED | calICalendar.ITEM_FILTER_TYPE_EVENT,
+                                                      0, null, null, modificationListener);
+                    } else if (listener) {
+                        listener.onOperationComplete(this_, status, opType, id, detail);
+                    }
+                }
+            }
+            this_.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_CREATED | calICalendar.ITEM_FILTER_TYPE_EVENT,
+                                                      0, null, null, opListener);
+            // this.refresh();
         }
     },
 
