@@ -658,6 +658,7 @@ calStorageCalendar.prototype = {
         var itemNotCompletedFilter = ((aItemFilter & kCalICalendar.ITEM_FILTER_COMPLETED_NO) != 0);
 
         function checkCompleted(item) {
+            dump("\nItem Completed " + item.isCompleted + " " + itemCompletedFilter + " " + itemNotCompletedFilter + " \n");
             return (item.isCompleted ? itemCompletedFilter : itemNotCompletedFilter);
         }
 
@@ -800,11 +801,17 @@ calStorageCalendar.prototype = {
             sp.range_end = endTime;
             sp.start_offset = aRangeStart ? aRangeStart.timezoneOffset * USECS_PER_SECOND : 0;
             sp.end_offset = aRangeEnd ? aRangeEnd.timezoneOffset * USECS_PER_SECOND : 0;
-
+            sp.offline_journal = null;
+            if (wantOfflineCreatedItems) sp.offline_journal = 'c';
+            if (wantOfflineDeletedItems) sp.offline_journal = 'd';
+            if (wantOfflineModifiedItems) sp.offline_journal = 'm';
+            if (wantOfflineCreatedItems) dump("Todo Query offline_journal Flag " + sp.offline_journal + "\n");
+            
             try {
                 while (this.mSelectNonRecurringTodosByRange.step()) {
                     let row = this.mSelectNonRecurringTodosByRange.row;
                     resultItems.push(this.getTodoFromRow(row, {}));
+                    if(wantOfflineCreatedItems) dump("\n[Inside select Loop] => row.flag " + row.offline_journal + "\n");
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring todos by range!\n" + e +
@@ -815,7 +822,7 @@ calStorageCalendar.prototype = {
 
             // process the non-recurring todos:
             for each (var todoitem in resultItems) {
-                count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
+                count += handleResultItem(todoitem, Components.interfaces.calITodo,checkCompleted);
                 if (checkCount()) {
                     return;
                 }
@@ -827,7 +834,7 @@ calStorageCalendar.prototype = {
 
             // process the recurring todos from the cache
             for each (var todoitem in this.mRecTodoCache) {
-                count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
+                count += handleResultItem(todoitem, Components.interfaces.calITodo);
                 if (checkCount()) {
                     return;
                 }
@@ -849,33 +856,54 @@ calStorageCalendar.prototype = {
     },
 
     getOfflineJournalFlag: function cSC_getOfflineJournalFlag(aItem){
-        if (aItem == null) return null;
         var aID = aItem.id;
         let flag = null;
-        // try events first
-        this.prepareStatement(this.mSelectEvent);
-        this.mSelectEvent.params.id = aID;
-        try {
-                if (this.mSelectEvent.step()) {
-                flag = this.mSelectEvent.row.offline_journal;
+        
+        if(isEvent(aItem)){
+            this.prepareStatement(this.mSelectEvent);
+            this.mSelectEvent.params.id = aID;
+            try {
+                    if (this.mSelectEvent.step()) {
+                    flag = this.mSelectEvent.row.offline_journal;
+                }
+            } catch (e) {
+                cal.ERROR("Error selecting item by id " + aID + "!\n" + e +
+                          "\nDB Error: " + this.mDB.lastErrorString);
+            } finally {
+                this.mSelectEvent.reset();
             }
-        } catch (e) {
-            cal.ERROR("Error selecting item by id " + aID + "!\n" + e +
-                      "\nDB Error: " + this.mDB.lastErrorString);
-        } finally {
-            this.mSelectEvent.reset();
+            
+        } else if(isToDo(aItem)){
+            this.prepareStatement(this.mSelectTodo);
+            this.mSelectTodo.params.id = aID;
+            try {
+                if (this.mSelectTodo.step()) {
+                    flag = this.mSelectTodo.row.offline_journal;
+                }
+            } catch (e) {
+                cal.ERROR("Error selecting item by id " + aID + "!\n" + e +
+                          "\nDB Error: " + this.mDB.lastErrorString);
+            } finally {
+                this.mSelectTodo.reset();
+            }
         }
-
+        
         return flag;
     },
-
+    
     setOfflineJournalFlag: function cSC_setOfflineJournalFlag(aItem, flag){
-        var aID = aItem.id;
-
-        this.prepareStatement(this.mEditOfflineFlag);
-        this.mEditOfflineFlag.params.id = aID;
-        this.mEditOfflineFlag.params.offline_journal = flag;
-        this.mEditOfflineFlag.execute();
+        let aID = aItem.id;
+        if(isEvent(aItem)){
+            this.prepareStatement(this.mEditEventOfflineFlag);
+            this.mEditEventOfflineFlag.params.id = aID;
+            this.mEditEventOfflineFlag.params.offline_journal = flag;
+            this.mEditEventOfflineFlag.execute();
+        } else if(isToDo(aItem)){
+            this.prepareStatement(this.mEditTodoOfflineFlag);
+            this.mEditTodoOfflineFlag.params.id = aID;
+            this.mEditTodoOfflineFlag.params.offline_journal = flag;
+            this.mEditTodoOfflineFlag.execute();
+        }
     },
 
     //
@@ -1039,7 +1067,9 @@ calStorageCalendar.prototype = {
             "   ("+nonFloatingTodoDue+" >= :range_start)) AND " +
             "  (("+floatingTodoDue+" < :range_end + :end_offset) OR " +
             "   ("+nonFloatingTodoDue+" < :range_end)))) " +
-            " AND cal_id = :cal_id AND flags & 16 == 0 AND recurrence_id IS NULL"
+            " AND cal_id = :cal_id AND flags & 16 == 0 AND recurrence_id IS NULL " +
+            " AND ((:offline_journal IS NULL AND (offline_journal is NULL OR offline_journal != 'd')) " +
+            " OR (offline_journal = :offline_journal))"
             );
 
         this.mSelectEventsWithRecurrence = createStatement(
@@ -1238,10 +1268,16 @@ calStorageCalendar.prototype = {
             "VALUES  (:cal_id, :item_id, :icalString, :recurrence_id, :recurrence_id_tz)  "
             );
         //Offline Operations
-        this.mEditOfflineFlag = createStatement(
+        this.mEditEventOfflineFlag = createStatement(
             this.mDB,
             "UPDATE cal_events SET offline_journal = :offline_journal" +
-            " WHERE id= :id AND cal_id = :cal_id"
+            " WHERE id = :id AND cal_id = :cal_id"
+        );
+        
+        this.mEditTodoOfflineFlag = createStatement(
+            this.mDB,
+            "UPDATE cal_todos SET offline_journal = :offline_journal" +
+            " WHERE id = :id AND cal_id = :cal_id"
         );
 
         // delete statements
