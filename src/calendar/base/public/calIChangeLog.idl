@@ -41,7 +41,8 @@ interface calIGenericOperationListener;
 interface calIOperation;
 
 /**
- * Interface for managing offline flags in offline storage (calStorageCalendar)
+ * Interface for managing offline flags in offline storage
+ * (calStorageCalendar), in particular from calICachedCalendar.
  */
 [scriptable, uuid(36dc2c93-5851-40d2-9ba9-b1f6e682c75c)]
 interface calIOfflineStorage : calICalendar {
