@@ -31,7 +31,6 @@ XPIDLSRCS = calIAlarm.idl \
             calIItipItem.idl \
             calIItipTransport.idl \
             calIOperation.idl \
-            calIOfflineStorage.idl \
             calIPeriod.idl \
             calIPrintFormatter.idl \
             calIRecurrenceInfo.idl \

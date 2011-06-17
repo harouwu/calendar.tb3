@@ -41,6 +41,48 @@ interface calIGenericOperationListener;
 interface calIOperation;
 
 /**
+ * Interface for managing offline flags in offline storage
+ * (calStorageCalendar), in particular from calICachedCalendar.
+ */
+[scriptable, uuid(36dc2c93-5851-40d2-9ba9-b1f6e682c75c)]
+interface calIOfflineStorage : calICalendar {
+    /**
+     * addOfflineItem mark the item of which the id is passed as parameter as
+     * new.
+     *
+     * @param aItem       the item to add
+     * @param aListener   where to call back the results
+     */
+    void addOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
+    
+    /**
+     * modifyOfflineItem mark the item of which the id is passed as parameter as
+     * modified.
+     *
+     * @param aItem       the item to modify
+     * @param aListener   where to call back the results
+     */
+    void modifyOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
+
+    /**
+     * deleteOfflineItem mark the item of which the id is passed as parameter as
+     * deleted.
+     *
+     * @param aItem       the item to delete
+     * @param aListener   where to call back the results
+     */
+    void deleteOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
+    
+    /**
+     * resetItemOfflineFlag remove any offline flag from the item record.
+     *
+     * @param aItem       the item to reset
+     * @param aListener   where to call back the results
+     */
+    void resetItemOfflineFlag(in calIItemBase aItem, in calIOperationListener aListener);
+};
+
+/**
  * Interface for synchronously working providers on storing items,
  * e.g. storage, memory. All modifying commands return after the
  * modification has been performed.
@@ -101,6 +143,11 @@ interface calISyncWriteCalendar : calICalendar {
 [scriptable, uuid(0bf4c6a2-b4c7-4cae-993a-4408d8bded3e)]
 interface calIChangeLog : nsISupports {
     /**
+     * Enable the changelog calendar to retrieve offline data right after instanciation.
+     */
+    void setOfflineStorage(in calISyncWriteCalendar aStorage);
+
+    /**
      * Resets the changelog. This is used if the cache should be refreshed.
      */
     void resetLog();
@@ -117,6 +164,5 @@ interface calIChangeLog : nsISupports {
      * @param aDestination      The calendar to sync changes into
      * @param aListener         The listener to notify when the operation completes.
      */
-    calIOperation replayChangesOn(in calISyncWriteCalendar aDestination,
-                                  in calIGenericOperationListener aListener);
+    calIOperation replayChangesOn(in calIGenericOperationListener aListener);
 };
