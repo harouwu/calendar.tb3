@@ -921,11 +921,15 @@ calStorageCalendar.prototype = {
         else {
             this.setOfflineJournalFlag(aItem,"d");
         }
+
         this.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
                                      Components.interfaces.calIOperationListener.DELETE,
                                      aItem.id,
                                      aItem);
+
+        // notify observers
+        this.observers.notify("onDeleteItem", [aItem]);
     },
     resetItemOfflineFlag: function(aItem, aListener){
         this.setOfflineJournalFlag(aItem,null);
