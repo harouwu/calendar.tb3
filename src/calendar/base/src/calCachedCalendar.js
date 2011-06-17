@@ -133,6 +133,12 @@ function calCachedCalendar(uncachedCalendar) {
                                            updateTimer * 60 * 1000,
                                            Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
     }
+
+    /* start reconciling potential offline items if we start in online mode
+     */
+    if (!this.offline) {
+        this.reconcileAddedItems();
+    }
 }
 calCachedCalendar.prototype = {
     QueryInterface: function cCC_QueryInterface(aIID) {
