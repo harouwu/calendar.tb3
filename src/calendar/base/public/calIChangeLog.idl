@@ -143,6 +143,11 @@ interface calISyncWriteCalendar : calICalendar {
 [scriptable, uuid(0bf4c6a2-b4c7-4cae-993a-4408d8bded3e)]
 interface calIChangeLog : nsISupports {
     /**
+     * Enable the changelog calendar to retrieve offline data right after instanciation.
+     */
+    void setOfflineStorage(in calISyncWriteCalendar aStorage);
+
+    /**
      * Resets the changelog. This is used if the cache should be refreshed.
      */
     void resetLog();
@@ -159,6 +164,5 @@ interface calIChangeLog : nsISupports {
      * @param aDestination      The calendar to sync changes into
      * @param aListener         The listener to notify when the operation completes.
      */
-    calIOperation replayChangesOn(in calISyncWriteCalendar aDestination,
-                                  in calIGenericOperationListener aListener);
+    calIOperation replayChangesOn(in calIGenericOperationListener aListener);
 };
