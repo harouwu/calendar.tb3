@@ -371,7 +371,7 @@ calCachedCalendar.prototype = {
             }
         };
 
-        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_CREATED | calICalendar.ITEM_FILTER_TYPE_ALL,
+        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_ALL_ITEMS | calICalendar.ITEM_FILTER_OFFLINE_CREATED, //calICalendar.ITEM_FILTER_TYPE_ALL does not include calICalendar.ITEM_FILTER_COMPLETED_ALL,
                                       0, null, null, getListener);
     },
     reconcileModifiedItems: function cCC_reconcileModifiedItems() {
@@ -422,7 +422,7 @@ calCachedCalendar.prototype = {
             }
         };
 
-        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_MODIFIED | calICalendar.ITEM_FILTER_TYPE_ALL,
+        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_MODIFIED | calICalendar.ITEM_FILTER_ALL_ITEMS ,//calICalendar.ITEM_FILTER_TYPE_ALL,
                                       0, null, null, getListener);
     },
     reconcileDeletedItems: function cCC_reconcileDeletedItems() {
@@ -473,7 +473,7 @@ calCachedCalendar.prototype = {
             }
         };
 
-        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_DELETED | calICalendar.ITEM_FILTER_TYPE_ALL,
+        this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_DELETED | calICalendar.ITEM_FILTER_ALL_ITEMS, //| calICalendar.ITEM_FILTER_TYPE_ALL,
                                       0, null, null, getListener);
     },
 

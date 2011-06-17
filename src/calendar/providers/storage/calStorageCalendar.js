@@ -658,7 +658,6 @@ calStorageCalendar.prototype = {
         var itemNotCompletedFilter = ((aItemFilter & kCalICalendar.ITEM_FILTER_COMPLETED_NO) != 0);
 
         function checkCompleted(item) {
-            dump("\nItem Completed " + item.isCompleted + " " + itemCompletedFilter + " " + itemNotCompletedFilter + " \n");
             return (item.isCompleted ? itemCompletedFilter : itemNotCompletedFilter);
         }
 
@@ -805,13 +804,11 @@ calStorageCalendar.prototype = {
             if (wantOfflineCreatedItems) sp.offline_journal = 'c';
             if (wantOfflineDeletedItems) sp.offline_journal = 'd';
             if (wantOfflineModifiedItems) sp.offline_journal = 'm';
-            if (wantOfflineCreatedItems) dump("Todo Query offline_journal Flag " + sp.offline_journal + "\n");
             
             try {
                 while (this.mSelectNonRecurringTodosByRange.step()) {
                     let row = this.mSelectNonRecurringTodosByRange.row;
                     resultItems.push(this.getTodoFromRow(row, {}));
-                    if(wantOfflineCreatedItems) dump("\n[Inside select Loop] => row.flag " + row.offline_journal + "\n");
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring todos by range!\n" + e +
@@ -822,7 +819,7 @@ calStorageCalendar.prototype = {
 
             // process the non-recurring todos:
             for each (var todoitem in resultItems) {
-                count += handleResultItem(todoitem, Components.interfaces.calITodo,checkCompleted);
+                count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
                 if (checkCount()) {
                     return;
                 }
@@ -834,7 +831,7 @@ calStorageCalendar.prototype = {
 
             // process the recurring todos from the cache
             for each (var todoitem in this.mRecTodoCache) {
-                count += handleResultItem(todoitem, Components.interfaces.calITodo);
+                count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
                 if (checkCount()) {
                     return;
                 }
@@ -856,6 +853,7 @@ calStorageCalendar.prototype = {
     },
 
     getOfflineJournalFlag: function cSC_getOfflineJournalFlag(aItem){
+        if(!aItem) return null;
         var aID = aItem.id;
         let flag = null;
         
