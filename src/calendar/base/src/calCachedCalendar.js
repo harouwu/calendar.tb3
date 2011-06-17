@@ -324,7 +324,6 @@ calCachedCalendar.prototype = {
     },
 
     reconcileAddedItems: function cCC_reconcileAddedItems() {
-        dump("reconcileAddedItems\n");
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -358,7 +357,7 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                dump("adding "  + this.items.length + " items\n");
+                LOG("[calCachedCalendar] adding "  + this.items.length + " items");
                 if (this.items.length > 0) {
                     addListener.itemCount = this.items.length;
                     for each (var aItem in this.items) {
@@ -376,7 +375,6 @@ calCachedCalendar.prototype = {
                                       0, null, null, getListener);
     },
     reconcileModifiedItems: function cCC_reconcileModifiedItems() {
-        dump("reconcileModifiedItems\n");
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -410,7 +408,7 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                dump("modifying "  + this.items.length + " items\n");
+                LOG("[calCachedCalendar] modifying "  + this.items.length + " items");
                 if (this.items.length > 0) {
                     modifyListener.itemCount = this.items.length;
                     for each (var aItem in this.items) {
@@ -428,7 +426,6 @@ calCachedCalendar.prototype = {
                                       0, null, null, getListener);
     },
     reconcileDeletedItems: function cCC_reconcileDeletedItems() {
-        dump("reconcileDeletedItems\n");
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -462,7 +459,7 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                dump("deleting "  + this.items.length + " items\n");
+                LOG("[calCachedCalendar] deleting "  + this.items.length + " items");
                 if (this.items.length > 0) {
                     deleteListener.itemCount = this.items.length;
                     for each (var aItem in this.items) {
