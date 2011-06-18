@@ -114,6 +114,8 @@ function calCachedCalendar(uncachedCalendar) {
     this.setupCachedCalendar();
 
     if (this.supportsChangeLog) {
+        uncachedCalendar.setOfflineStorage(this.mCachedCalendar);
+
         var updateTimer = this.getProperty("cache.updateTimer");
         if (updateTimer === null) {
             updateTimer = 4; // override for changelog based providers
@@ -271,7 +273,7 @@ calCachedCalendar.prototype = {
                     }
                 }
             };
-            this.mPendingSync = this.mUncachedCalendar.replayChangesOn(this.mCachedCalendar, opListener);
+            this.mPendingSync = this.mUncachedCalendar.replayChangesOn(opListener);
             return this.mPendingSync;
         }
 
