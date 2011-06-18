@@ -359,15 +359,20 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                LOG("[calCachedCalendar] adding "  + this.items.length + " items");
-                if (this.items.length > 0) {
-                    addListener.itemCount = this.items.length;
-                    for each (var aItem in this.items) {
-                        this_.addItem(aItem, addListener);
-                    }
+                if (this_.offline) {
+                    LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
                 }
                 else {
-                    this_.reconcileModifiedItems();
+                    LOG("[calCachedCalendar] adding "  + this.items.length + " items");
+                    if (this.items.length > 0) {
+                        addListener.itemCount = this.items.length;
+                        for each (var aItem in this.items) {
+                            this_.addItem(aItem, addListener);
+                        }
+                    }
+                    else {
+                        this_.reconcileModifiedItems();
+                    }
                 }
                 delete this.items;
             }
@@ -410,15 +415,20 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                LOG("[calCachedCalendar] modifying "  + this.items.length + " items");
-                if (this.items.length > 0) {
-                    modifyListener.itemCount = this.items.length;
-                    for each (var aItem in this.items) {
-                        this_.modifyItem(aItem, aItem, modifyListener);
-                    }
+                if (this_.offline) {
+                    LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
                 }
                 else {
-                    this_.reconcileDeletedItems();
+                    LOG("[calCachedCalendar] modifying "  + this.items.length + " items");
+                    if (this.items.length > 0) {
+                        modifyListener.itemCount = this.items.length;
+                        for each (var aItem in this.items) {
+                            this_.modifyItem(aItem, aItem, modifyListener);
+                        }
+                    }
+                    else {
+                        this_.reconcileDeletedItems();
+                    }
                 }
                 delete this.items;
             }
@@ -461,15 +471,20 @@ calCachedCalendar.prototype = {
                 }
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                LOG("[calCachedCalendar] deleting "  + this.items.length + " items");
-                if (this.items.length > 0) {
-                    deleteListener.itemCount = this.items.length;
-                    for each (var aItem in this.items) {
-                        this_.deleteItem(aItem, deleteListener);
-                    }
+                if (this_.offline) {
+                    LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
                 }
                 else {
-                    this_.refresh();
+                    LOG("[calCachedCalendar] deleting "  + this.items.length + " items");
+                    if (this.items.length > 0) {
+                        deleteListener.itemCount = this.items.length;
+                        for each (var aItem in this.items) {
+                            this_.deleteItem(aItem, deleteListener);
+                        }
+                    }
+                    else {
+                        this_.refresh();
+                    }
                 }
                 delete this.items;
             }
@@ -571,6 +586,7 @@ calCachedCalendar.prototype = {
             this.modifyOfflineItem(newItem, oldItem, listener);
             return;
         }
+
         // Forwarding add/modify/delete to the cached calendar using the calIObserver
         // callbacks would be advantageous, because the uncached provider could implement
         // a true push mechanism firing without being triggered from within the program.
