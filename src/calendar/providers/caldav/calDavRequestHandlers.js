@@ -157,7 +157,7 @@ etagsHandler.prototype = {
                     onOperationComplete: function etags_getItem_onOperationComplete() {}
                 };
 
-                this.calendar.mTargetCalendar.getItem(this.calendar.mHrefIndex[path],
+                this.calendar.mOfflineStorage.getItem(this.calendar.mHrefIndex[path],
                                                       getItemListener);
                 if (foundItem) {
                     let wasInboxItem = this.calendar.mItemInfoCache[foundItem.id].isInboxItem;
@@ -165,7 +165,7 @@ etagsHandler.prototype = {
                         (wasInboxItem === false && !this.calendar.isInbox(this.baseUri.spec))) {
                         cal.LOG("Deleting local href: " + path)
                         delete this.calendar.mHrefIndex[path];
-                        this.calendar.mTargetCalendar.deleteItem(foundItem, null);
+                        this.calendar.mOfflineStorage.deleteItem(foundItem, null);
                         needsRefresh = true;
                     }
                 }
@@ -445,8 +445,8 @@ webDavSyncHandler.prototype = {
                  responseStatus <= 499) {
             cal.LOG("CalDAV: Reseting sync token because server returned status code: " + responseStatus);
             this._reader = null;
-            this.calendar.mWebdavSyncToken=null;
-            this.calendar.mTargetCalendar.deleteMetaData("sync-token");
+            this.calendar.mWebdavSyncToken = null;
+            this.calendar.saveCalendarProperties();
             this.calendar.safeRefresh(this.changelogListener);
         } else {
             cal.WARN("CalDAV: Error doing webdav sync: " + responseStatus);
@@ -537,8 +537,7 @@ webDavSyncHandler.prototype = {
         if (!this.itemsNeedFetching.length) {
             if (this.newSyncToken) {
                 this.calendar.mWebdavSyncToken = this.newSyncToken;
-                this.calendar.mTargetCalendar.setMetaData("sync-token",
-                                                          this.newSyncToken);
+                this.calendar.saveCalendarProperties();
                 cal.LOG("CalDAV: New webdav-sync Token: " + this.calendar.mWebdavSyncToken);
             }
             this.calendar.finalizeUpdatedItems(this.changelogListener,
@@ -800,7 +799,7 @@ multigetSyncHandler.prototype = {
         if (this.itemsNeedFetching.length == 0) {
             if (this.newSyncToken) {
                 this.calendar.mWebdavSyncToken = this.newSyncToken;
-                this.calendar.mTargetCalendar.setMetaData("sync-token", this.newSyncToken);
+                this.calendar.saveCalendarProperties();
               cal.LOG("CalDAV: New webdav-sync Token: " + this.calendar.mWebdavSyncToken);
             }
 

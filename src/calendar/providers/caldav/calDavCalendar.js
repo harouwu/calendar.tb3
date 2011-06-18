@@ -71,7 +71,7 @@ function calDavCalendar() {
     this.mAuthRealm = null;
     this.mObserver = null;
     this.mFirstRefreshDone = false;
-    this.mTargetCalendar = null;
+    this.mOfflineStorage = null;
     this.mQueuedQueries = [];
     this.mCtag = null;
 
@@ -149,18 +149,18 @@ calDavCalendar.prototype = {
     },
 
     ensureTargetCalendar: function caldav_ensureTargetCalendar() {
-        if (!this.isCached && !this.mTargetCalendar) {
+        if (!this.isCached && !this.mOfflineStorage) {
             // If this is a cached calendar, the actual cache is taken care of
             // by the calCachedCalendar facade. In any other case, we use a
             // memory calendar to cache things.
-            this.mTargetCalendar = Components
+            this.mOfflineStorage = Components
                                    .classes["@mozilla.org/calendar/calendar;1?type=memory"]
                                    .createInstance(Components.interfaces.calISyncWriteCalendar);
 
-            this.mTargetCalendar.superCalendar = this;
+            this.mOfflineStorage.superCalendar = this;
             this.mObserver = new calDavObserver(this);
-            this.mTargetCalendar.addObserver(this.mObserver);
-            this.mTargetCalendar.setProperty("relaxedMode", true);
+            this.mOfflineStorage.addObserver(this.mObserver);
+            this.mOfflineStorage.setProperty("relaxedMode", true);
         }
     },
 
@@ -183,47 +183,35 @@ calDavCalendar.prototype = {
         throw NS_ERROR_NOT_IMPLEMENTED;
     },
 
-
     // calIChangeLog interface
-    resetLog: function caldav_resetLog() {
-        if (this.isCached && this.mTargetCalendar) {
-            this.mTargetCalendar.startBatch();
-            try {
-                for (let itemId in this.mItemInfoCache) {
-                    this.mTargetCalendar.deleteMetaData(itemId);
-                    delete this.mItemInfoCache[itemId];
-                }
-            } finally {
-                this.mTargetCalendar.endBatch();
-            }
-        }
+    setOfflineStorage: function caldav_setOfflineStorage(storage) {
+        this.mOfflineStorage = storage;
+        this.fetchCachedMetaData();
     },
 
-    // in calISyncWriteCalendar aDestination,
-    // in calIGenericOperationListener aListener
-    replayChangesOn: function caldav_replayChangesOn(aDestination, aChangeLogListener) {
-        if (!this.mTargetCalendar) {
-            this.mTargetCalendar = aDestination.wrappedJSObject;
-            this.fetchItemVersions();
-            this.checkDavResourceType(aChangeLogListener);
-        } else {
-            this.safeRefresh(aChangeLogListener);
-        }
-    },
-
-    fetchItemVersions: function caldav_fetchItemVersions() {
+    fetchCachedMetaData: function caldav_fetchCachedMetaData() {
         let cacheIds = {};
         let cacheValues = {};
-        this.mTargetCalendar.getAllMetaData({}, cacheIds, cacheValues);
+        this.mOfflineStorage.getAllMetaData({}, cacheIds, cacheValues);
         cacheIds = cacheIds.value;
         cacheValues = cacheValues.value;
+        let needsResave = false;
+        let calendarProperties = null;
         for (let count = 0; count < cacheIds.length; count++) {
             let itemId = cacheIds[count];
             let itemData = cacheValues[count];
             if (itemId == "ctag") {
                 this.mCtag = itemData;
+                this.mOfflineStorage.deleteMetaData("ctag");
             } else if (itemId == "sync-token") {
                 this.mWebdavSyncToken = itemData;
+                this.mOfflineStorage.deleteMetaData("sync-token");
+            } else if (itemId == "calendar-properties") {
+                this.restoreCalendarProperties(itemData);
+                this.mCheckedServerInfo = true;
+                this.setProperty("currentStatus", Components.results.NS_OK);
+                this.readOnly = false;
+                this.disabled = false;
             } else {
                 let itemDataArray = itemData.split("\u001A");
                 let etag = itemDataArray[0];
@@ -243,11 +231,59 @@ calDavCalendar.prototype = {
         }
     },
 
+    get offlineCachedProperties() {
+        return [ "mAuthScheme", "mAuthRealm", "mHasWebdavSyncSupport",
+                 "mCtag", "mSupportedItemTypes", "mPrincipalUrl", "mCalHomeSet",
+                 "mShouldPollInbox", "hasAutoScheduling", "mHaveScheduling",
+                 "mCalendarUserAddress", "mShouldPollInbox", "mOutboxUrl" ];
+    },
+
+    saveCalendarProperties: function caldav_saveCalendarProperties() {
+        let properties = {};
+        for each (let property in this.offlineCachedProperties) {
+            properties[property] = this[property];
+        }
+        this.mOfflineStorage.setMetaData("calendar-properties", JSON.stringify(properties));
+    },
+
+    restoreCalendarProperties: function caldav_restoreCalendarProperties(data) {
+        let properties = JSON.parse(data);
+        for each (let property in this.offlineCachedProperties) {
+            this[property] = properties[property];
+        }
+    },
+
+    resetLog: function caldav_resetLog() {
+        if (this.isCached && this.mOfflineStorage) {
+            this.mOfflineStorage.startBatch();
+            try {
+                for (let itemId in this.mItemInfoCache) {
+                    this.mOfflineStorage.deleteMetaData(itemId);
+                    delete this.mItemInfoCache[itemId];
+                }
+            } finally {
+                this.mOfflineStorage.endBatch();
+            }
+        }
+    },
+
+    // in calISyncWriteCalendar aDestination,
+    // in calIGenericOperationListener aListener
+    replayChangesOn: function caldav_replayChangesOn(aChangeLogListener) {
+        if (!this.mCheckedServerInfo) {
+            // If we haven't refreshed yet, then we should check the resource
+            // type first. This will call refresh() again afterwards.
+            this.checkDavResourceType(aChangeLogListener);
+        } else {
+            this.safeRefresh(aChangeLogListener);
+        }
+    },
+
     setMetaData: function caldav_setMetaData(id, path, etag, isInboxItem) {
-        if (this.mTargetCalendar.setMetaData) {
+        if (this.mOfflineStorage.setMetaData) {
             if (id) {
                 let dataString = [etag,path,(isInboxItem ? "true" : "false")].join("\u001A");
-                this.mTargetCalendar.setMetaData(id, dataString);
+                this.mOfflineStorage.setMetaData(id, dataString);
             } else {
                 cal.LOG("CAlDAV: cannot store meta data without an id");
             }
@@ -347,7 +383,7 @@ calDavCalendar.prototype = {
 
     mCtag: null,
 
-    mTargetCalendar: null,
+    mOfflineStorage: null,
 
     // Contains the last valid synctoken returned
     // from the server with Webdav Sync enabled servers
@@ -787,7 +823,7 @@ calDavCalendar.prototype = {
                                                          Components.interfaces.calIOperationListener.DELETE,
                                                          null, null);
                     } else {
-                        thisCalendar.mTargetCalendar.deleteItem(aItem, aListener);
+                        thisCalendar.mOfflineStorage.deleteItem(aItem, aListener);
                     }
                     let decodedHRef = decodeURIComponent(eventUri.path);
                     delete thisCalendar.mHrefIndex[decodedHRef];
@@ -923,9 +959,9 @@ calDavCalendar.prototype = {
         this.mHrefIndex[hrefPath] = item.id;
         this.mItemInfoCache[item.id].etag = etag;
         if (this.mItemInfoCache[item.id].isNew) {
-            this.mTargetCalendar.adoptItem(item, aListener);
+            this.mOfflineStorage.adoptItem(item, aListener);
         } else {
-            this.mTargetCalendar.modifyItem(item, null, aListener);
+            this.mOfflineStorage.modifyItem(item, null, aListener);
         }
 
         if (this.isCached) {
@@ -954,7 +990,7 @@ calDavCalendar.prototype = {
             onOperationComplete: function deleteLocalItem_getItem_onOperationComplete() {}
         };
 
-        this.mTargetCalendar.getItem(this.mHrefIndex[path],
+        this.mOfflineStorage.getItem(this.mHrefIndex[path],
                                      getItemListener);
         // Since the target calendar's operations are synchronous, we can
         // safely set variables from this function.
@@ -966,7 +1002,7 @@ calDavCalendar.prototype = {
                 cal.LOG("CalDAV: deleting item: " + path + ", uid: " + foundItem.id);
                 delete this.mHrefIndex[path];
                 delete this.mItemInfoCache[foundItem.id];
-                this.mTargetCalendar.deleteItem(foundItem,
+                this.mOfflineStorage.deleteItem(foundItem,
                                                 getItemListener);
                 isDeleted = true;
             }
@@ -995,8 +1031,8 @@ calDavCalendar.prototype = {
         this.mFirstRefreshDone = true;
         while (this.mQueuedQueries.length) {
             let query = this.mQueuedQueries.pop();
-            this.mTargetCalendar.getItems
-                .apply(this.mTargetCalendar, query);
+            this.mOfflineStorage.getItems
+                .apply(this.mOfflineStorage, query);
         }
         if (this.hasScheduling &&
             !this.isInbox(calendarURI.spec)) {
@@ -1072,7 +1108,7 @@ calDavCalendar.prototype = {
 
     // void getItem( in string id, in calIOperationListener aListener );
     getItem: function caldav_getItem(aId, aListener) {
-        this.mTargetCalendar.getItem(aId, aListener);
+        this.mOfflineStorage.getItem(aId, aListener);
     },
 
     // void getItems( in unsigned long aItemFilter, in unsigned long aCount,
@@ -1081,8 +1117,8 @@ calDavCalendar.prototype = {
     getItems: function caldav_getItems(aItemFilter, aCount, aRangeStart,
                                        aRangeEnd, aListener) {
         if (this.isCached) {
-            if (this.mTargetCalendar) {
-                this.mTargetCalendar.getItems.apply(this.mTargetCalendar, arguments);
+            if (this.mOfflineStorage) {
+                this.mOfflineStorage.getItems.apply(this.mOfflineStorage, arguments);
             } else {
                 this.notifyOperationComplete(aListener,
                                              Components.results.NS_OK,
@@ -1094,7 +1130,7 @@ calDavCalendar.prototype = {
             if (!this.mCheckedServerInfo) {
                 this.mQueuedQueries.push(arguments);
             } else {
-                this.mTargetCalendar.getItems.apply(this.mTargetCalendar, arguments);
+                this.mOfflineStorage.getItems.apply(this.mOfflineStorage, arguments);
             }
         }
     },
@@ -1228,7 +1264,7 @@ calDavCalendar.prototype = {
             if (!ctag.length || ctag != thisCalendar.mCtag) {
                 // ctag mismatch, need to fetch calendar-data
                 thisCalendar.mCtag = ctag;
-                thisCalendar.mTargetCalendar.setMetaData("ctag", ctag);
+                thisCalendar.saveCalendarProperties();
                 thisCalendar.getUpdatedItems(thisCalendar.calendarUri,
                                              aChangeLogListener);
                 if (thisCalendar.verboseLogging()) {
@@ -1260,13 +1296,7 @@ calDavCalendar.prototype = {
     },
 
     refresh: function caldav_refresh() {
-        if (!this.mCheckedServerInfo) {
-            // If we haven't refreshed yet, then we should check the resource
-            // type first. This will call refresh() again afterwards.
-            this.checkDavResourceType(null);
-        } else {
-            this.safeRefresh();
-        }
+        this.replayChangesOn(null);
     },
 
     firstInRealm: function caldav_firstInRealm() {
@@ -1492,7 +1522,7 @@ calDavCalendar.prototype = {
                 }
 
                 thisCalendar.mCtag = ctag;
-                thisCalendar.mTargetCalendar.setMetaData("ctag", ctag);
+                thisCalendar.saveCalendarProperties();
                 if (thisCalendar.verboseLogging()) {
                     cal.LOG("CalDAV: initial ctag " + ctag + " for calendar " +
                             thisCalendar.name);
@@ -1939,6 +1969,7 @@ calDavCalendar.prototype = {
     completeCheckServerInfo: function caldav_completeCheckServerInfo(aChangeLogListener, aError) {
         if (Components.isSuccessCode(aError)) {
             // "undefined" is a successcode, so all is good
+            this.saveCalendarProperties();
             this.mCheckedServerInfo = true;
             this.setProperty("currentStatus", Components.results.NS_OK);
 
@@ -2267,7 +2298,7 @@ if (!message) {
             }
         };
 
-        this.mTargetCalendar.getItem(aItem.id, getItemListener);
+        this.mOfflineStorage.getItem(aItem.id, getItemListener);
     },
 
     canNotify: function caldav_canNotify(aMethod, aItem) {
