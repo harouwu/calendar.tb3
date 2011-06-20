@@ -242,7 +242,9 @@ calDavCalendar.prototype = {
     saveCalendarProperties: function caldav_saveCalendarProperties() {
         let properties = {};
         for each (let property in this.offlineCachedProperties) {
-            properties[property] = this[property];
+            if (this[property] !== undefined) {
+                properties[property] = this[property];
+            }
         }
         this.mOfflineStorage.setMetaData("calendar-properties", JSON.stringify(properties));
     },
@@ -250,7 +252,9 @@ calDavCalendar.prototype = {
     restoreCalendarProperties: function caldav_restoreCalendarProperties(data) {
         let properties = JSON.parse(data);
         for each (let property in this.offlineCachedProperties) {
-            this[property] = properties[property];
+            if (properties[property] !== undefined) {
+                this[property] = properties[property];
+            }
         }
     },
 
@@ -823,6 +827,7 @@ calDavCalendar.prototype = {
                         realListener.onOperationComplete(thisCalendar, status,
                                                          Components.interfaces.calIOperationListener.DELETE,
                                                          null, null);
+                        thisCalendar.mOfflineStorage.deleteMetaData(aItem.id);
                     } else {
                         thisCalendar.mOfflineStorage.deleteItem(aItem, aListener);
                     }
@@ -1003,6 +1008,9 @@ calDavCalendar.prototype = {
                 cal.LOG("CalDAV: deleting item: " + path + ", uid: " + foundItem.id);
                 delete this.mHrefIndex[path];
                 delete this.mItemInfoCache[foundItem.id];
+                if (this.isCached) {
+                    this.mOfflineStorage.deleteMetaData(foundItem.id);
+                }
                 this.mOfflineStorage.deleteItem(foundItem,
                                                 getItemListener);
                 isDeleted = true;

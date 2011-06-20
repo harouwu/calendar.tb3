@@ -804,7 +804,7 @@ calStorageCalendar.prototype = {
             if (wantOfflineCreatedItems) sp.offline_journal = 'c';
             if (wantOfflineDeletedItems) sp.offline_journal = 'd';
             if (wantOfflineModifiedItems) sp.offline_journal = 'm';
-            
+
             try {
                 while (this.mSelectNonRecurringTodosByRange.step()) {
                     let row = this.mSelectNonRecurringTodosByRange.row;
@@ -856,7 +856,7 @@ calStorageCalendar.prototype = {
         if(!aItem) return null;
         var aID = aItem.id;
         let flag = null;
-        
+
         if(isEvent(aItem)){
             this.prepareStatement(this.mSelectEvent);
             this.mSelectEvent.params.id = aID;
@@ -870,7 +870,7 @@ calStorageCalendar.prototype = {
             } finally {
                 this.mSelectEvent.reset();
             }
-            
+
         } else if(isToDo(aItem)){
             this.prepareStatement(this.mSelectTodo);
             this.mSelectTodo.params.id = aID;
@@ -885,10 +885,10 @@ calStorageCalendar.prototype = {
                 this.mSelectTodo.reset();
             }
         }
-        
+
         return flag;
     },
-    
+
     setOfflineJournalFlag: function cSC_setOfflineJournalFlag(aItem, flag){
         let aID = aItem.id;
         if(isEvent(aItem)){
@@ -1271,7 +1271,7 @@ calStorageCalendar.prototype = {
             "UPDATE cal_events SET offline_journal = :offline_journal" +
             " WHERE id = :id AND cal_id = :cal_id"
         );
-        
+
         this.mEditTodoOfflineFlag = createStatement(
             this.mDB,
             "UPDATE cal_todos SET offline_journal = :offline_journal" +
@@ -2317,7 +2317,6 @@ calStorageCalendar.prototype = {
             this.mDeleteTodo(aID, this.id);
             this.mDeleteAttachments(aID, this.id);
             this.mDeleteRelations(aID, this.id);
-            this.mDeleteMetaData(aID, this.id);
             this.mDeleteAlarms(aID, this.id);
         } catch (e) {
             this.releaseTransaction(e);
