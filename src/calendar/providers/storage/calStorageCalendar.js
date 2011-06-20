@@ -836,9 +836,14 @@ calStorageCalendar.prototype = {
 
             // process the recurring todos from the cache
             for each (var todoitem in this.mRecTodoCache) {
-                count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
-                if (checkCount()) {
-                    return;
+                let offline_journal_flag = self.getOfflineJournalFlag(todoitem);
+                if(offline_journal_flag == sp.offline_journal){
+                    //Need to check for recurring event's offline flag
+                    //coz item gets returned by default
+                    count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
+                    if (checkCount()) {
+                        return;
+                    }        
                 }
             }
         }
