@@ -233,7 +233,8 @@ calDavCalendar.prototype = {
 
     get offlineCachedProperties() {
         return [ "mAuthScheme", "mAuthRealm", "mHasWebdavSyncSupport",
-                 "mCtag", "mSupportedItemTypes", "mPrincipalUrl", "mCalHomeSet",
+                 "mCtag", "mWebdavSyncToken", "mSupportedItemTypes",
+                 "mPrincipalUrl", "mCalHomeSet",
                  "mShouldPollInbox", "hasAutoScheduling", "mHaveScheduling",
                  "mCalendarUserAddress", "mShouldPollInbox", "mOutboxUrl" ];
     },
