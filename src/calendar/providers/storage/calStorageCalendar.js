@@ -757,8 +757,8 @@ calStorageCalendar.prototype = {
             sp.end_offset = aRangeEnd ? aRangeEnd.timezoneOffset * USECS_PER_SECOND : 0;
             sp.offline_journal = null;
             if (wantOfflineDeletedItems) sp.offline_journal = "d";
-            if (wantOfflineCreatedItems) sp.offline_journal = "c";
-            if (wantOfflineModifiedItems) sp.offline_journal = "m";
+            else if (wantOfflineCreatedItems) sp.offline_journal = "c";
+            else if (wantOfflineModifiedItems) sp.offline_journal = "m";
             try {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
                     let row = this.mSelectNonRecurringEventsByRange.row;
@@ -781,9 +781,14 @@ calStorageCalendar.prototype = {
 
             // process the recurring events from the cache
             for each (var evitem in this.mRecEventCache) {
-                count += handleResultItem(evitem, Components.interfaces.calIEvent);
-                if (checkCount()) {
-                    return;
+                let offline_journal_flag = self.getOfflineJournalFlag(evitem);
+                if(offline_journal_flag == sp.offline_journal){
+                    //Need to check for recurring event's offline flag
+                    //coz item gets returned by default
+                    count += handleResultItem(evitem, Components.interfaces.calIEvent);
+                    if (checkCount()) {
+                        return;
+                    }
                 }
             }
         }
