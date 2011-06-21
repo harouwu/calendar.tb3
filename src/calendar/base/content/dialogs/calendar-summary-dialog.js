@@ -92,21 +92,24 @@ function onLoad() {
             if (cache[item.id]) {
                 /* We don't need to setup an observer here as we know the
                    entry was initialized from calendar-item-editing.js */
+                let itemEntry = null;
                 let opListener = {
                     onGetResult: function(calendar, status, itemType, detail, count, items) {
                         ASSERT(false, "unexpected!");
                     },
                     onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                        if (Components.isSuccessCode(status)) {
-                            if (opDetail) {
-                                window.readOnly = !(opDetail.userCanModify || opDetail.userCanRespond);
-                            }
-                        }
+                        itemEntry = opDetail;
                     }
                 };
                 let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
                                        .getService(Components.interfaces.calICalDAVACLManager);
                 aclMgr.getItemEntry(calendar, cache[item.id].locationPath, opListener);
+                if (itemEntry) {
+                    window.readOnly = !(itemEntry.userCanModify || itemEntry.userCanRespond);
+                }
+                else {
+                    ASSERT(false, "unexpected!");
+                }
             }
         }
     }
