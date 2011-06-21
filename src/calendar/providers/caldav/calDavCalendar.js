@@ -538,7 +538,7 @@ calDavCalendar.prototype = {
                                              flags, buttonLabel1, buttonLabel2,
                                              null, null, {});
 
-        if (choice == 0) {dump("\n\nmodify item------------"+choice)
+        if (choice == 0) {
             if (aMethod == CALDAV_MODIFY_ITEM) {
                 this.doModifyItem(aItem, aOldItem, aListener, true);
             } else {
