@@ -177,6 +177,9 @@ CalDAVACLOfflineManager.prototype = {
         this.mDeleteItemEntry = createStatement(this.mDB,
                                                 "DELETE FROM acl_item_entries"
                                                 + " WHERE url = :url");
+        this.mDeleteItemEntriesLike = createStatement(this.mDB,
+                                                      "DELETE FROM acl_item_entries"
+                                                      + " WHERE url LIKE :url");
     },
 
     getACLMeta: function CalDAVACLOfflineManager_getACLMeta(key) {
@@ -404,6 +407,11 @@ CalDAVACLOfflineManager.prototype = {
                                           : Components.results.NS_OK),
                                          itemEntry);
         }
+    },
+
+    dropCalendarEntry: function CalDAVACLOfflineManager_dropCalendarEntry(url) {
+        this.mDeleteItemEntriesLike(url + "%");
+        this.mDeleteCalendarEntry(url);;
     }
 };
 
@@ -1178,6 +1186,17 @@ CalDAVACLManager.prototype = {
         httpChannel.asyncOpen(loader, httpChannel);
     },
 
+    refresh: function refresh(url) {
+        let realURL = fixURL(url);
+        this.mOfflineManager.dropCalendarEntry(realURL);
+        let cachedEntry = this.calendars[realURL];
+        if (cachedEntry) {
+            /* We ensure any instance that would still exist are invalidated. */
+            cachedEntry.valid = false;
+            delete this.calendars[realURL];
+        }
+    },
+
     QueryInterface: function(aIID) {
         if (!aIID.equals(Components.interfaces.nsISupports)
             && !aIID.equals(Components.interfaces.calICalDAVACLManager))
@@ -1192,13 +1211,29 @@ function CalDAVAclCalendarEntry(calendar) {
     this.uri = calendar.uri;
     this.entries = {};
     this.hasAccessControl = false;
+    this.mValid = true;
 }
 
 CalDAVAclCalendarEntry.prototype = {
     uri: null,
     entries: null,
+    mValid: false,
+
+    set valid(newValid) {
+        this.mValid = newValid;
+    },
+    get valid() {
+        return this.mValid;
+    },
+    assertValid: function assertValid() {
+        if (!this.mValid) {
+            throw "This Calendar ACL entry has been invalidated, most likely by a refresh.";
+        }
+    },
 
     get userIsOwner() {
+        this.assertValid();
+
         let result = false;
 
         let i = 0;
@@ -1218,12 +1253,16 @@ CalDAVAclCalendarEntry.prototype = {
         return result;
     },
     get userCanAddItems() {
+        this.assertValid();
+
         // dump("has access control: " + this.hasAccessControl + "\n");
         return (!this.hasAccessControl
                 || (this.userPrivileges.indexOf("{DAV:}bind")
                     > -1));
     },
     get userCanDeleteItems() {
+        this.assertValid();
+
         // dump("has access control: " + this.hasAccessControl + "\n");
         // if (this.userPrivileges)
         // dump("indexof unbind: "
@@ -1234,6 +1273,8 @@ CalDAVAclCalendarEntry.prototype = {
     },
 
     getUserAddresses: function getUserAddresses(outCount, outAddresses) {
+        this.assertValid();
+
         if (this.userAddresses) {
             outCount.value = this.userAddresses.length;
             outAddresses.value = this.userAddresses;
@@ -1244,6 +1285,8 @@ CalDAVAclCalendarEntry.prototype = {
         }
     },
     getUserIdentities: function getUserAddresses(outCount, outIdentities) {
+        this.assertValid();
+
         if (this.userIdentities) {
             outCount.value = this.userIdentities.length;
             outIdentities.value = this.userIdentities;
@@ -1254,6 +1297,8 @@ CalDAVAclCalendarEntry.prototype = {
         }
     },
     getOwnerIdentities: function getUserAddresses(outCount, outIdentities) {
+        this.assertValid();
+
         if (this.ownerIdentities) {
             outCount.value = this.ownerIdentities.length;
             outIdentities.value = this.ownerIdentities;
