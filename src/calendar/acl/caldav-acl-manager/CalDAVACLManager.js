@@ -402,7 +402,7 @@ CalDAVACLOfflineManager.prototype = {
                                          (errors == queries.length
                                           ? Components.results.NS_ERROR_FAILURE
                                           : Components.results.NS_OK),
-                                         entry);
+                                         itemEntry);
         }
     }
 };
@@ -1074,7 +1074,7 @@ CalDAVACLManager.prototype = {
         // dump("\n\n\nitem-privilege-set:\n" + response + "\n\n\n");
 
         data.entry.userPrivileges = this._parsePrivileges(queryDoc);
-        this.mOfflineManager.setItemEntry(data["entry"], {});
+        this.mOfflineManager.setItemEntry(data["entry"]);
         this._notifyListenerSuccess(data["listener"], data["calendar"], data["entry"]);
     },
     _parsePrivileges: function _parsePrivileges(queryDoc) {
@@ -1287,7 +1287,7 @@ CalDAVAclItemEntry.prototype = {
         return this.parentCalendarEntry.userIsOwner;
     },
     get userCanModify() {
-        dump("userCanModify\n");
+        // dump("userCanModify\n");
         // dump("this.url: " + this.url + "\n");
         // dump("this.userPrivileges: " + this.userPrivileges + "\n");
         // dump("this.parentCalendarEntry.userPrivileges: "
