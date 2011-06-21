@@ -261,6 +261,7 @@ CalDAVACLOfflineManager.prototype = {
         }
         catch(e) {
             dump("getCalendarEntry: " + e + "\n:line: " +  e.lineNumber + "\n");
+            throw e;
         }
         finally {
             this.mSelectCalendarEntry.reset();
@@ -299,7 +300,6 @@ CalDAVACLOfflineManager.prototype = {
         let queries = [ this.mInsertCalendarEntry, this.mUpdateCalendarEntry ];
         let errors = 0;
         for each (let query in queries) {
-            dump("  query: " + query +"\n");
             let params = query.params;
             params.url = url;
             params.has_access_control = (entry.hasAccessControl ? 1 : 0);
@@ -321,7 +321,6 @@ CalDAVACLOfflineManager.prototype = {
                 break;
             }
             catch(e) {
-                dump("error: "  + e +  "\n");
                 errors++;
             }
             finally {
@@ -361,6 +360,7 @@ CalDAVACLOfflineManager.prototype = {
         }
         catch(e) {
             dump("getItemEntry: " + e + "\n:line: " +  e.lineNumber + "\n");
+            throw e;
         }
         finally {
             this.mSelectItemEntry.reset();
@@ -550,7 +550,7 @@ CalDAVACLManager.prototype = {
 
                     let itemEntry = null;
                     if (!calEntry.hasAccessControl || calEntry.userIsOwner) {
-                        dump("calEntry enables us to skip the querying of the item entry\n");
+                        // dump("calEntry enables us to skip the querying of the item entry\n");
                         /* In these case, we do not query the offline cache
                          neither the calendar collection because we know it's
                          useless. */
@@ -1040,19 +1040,19 @@ CalDAVACLManager.prototype = {
         let offlineListener = {
             onOperationComplete: function(aURL, opStatus, opEntry) {
                 if (Components.isSuccessCode(opStatus)) {
-                    dump("acl-manager: received item entry from db\n");
+                    // dump("acl-manager: received item entry from db\n");
                     this_._notifyListenerSuccess(listener, calEntry.calendar, opEntry);
                 }
                 else {
                     if (this_.isOffline) {
-                        dump("acl-manager: itemEntry not found in offline cache, faking it due to offline mode\n");
+                        // dump("acl-manager: itemEntry not found in offline cache, faking it due to offline mode\n");
                         listener.onOperationComplete(calEntry.calendar,
                                                      Components.results.NS_ERROR_FAILURE,
                                                      Components.interfaces.calIOperationListener.GET,
                                                      null, null);
                     }
                     else {
-                        dump("acl-manager: itemEntry not found in offline cache, querying it online...\n");
+                        // dump("acl-manager: itemEntry not found in offline cache, querying it online...\n");
                         this_._queryOnlineItemEntry(calEntry, itemURL, listener);
                     }
                 }
@@ -1339,11 +1339,9 @@ CalDAVAclItemEntry.prototype = {
         // + this.parentCalendarEntry.userPrivileges + "\n");
 
         if (!this.parentCalendarEntry.hasAccessControl) {
-            dump("has not access control -> true\n");
             return true;
         }
         if (this.parentCalendarEntry.userIsOwner) {
-            dump("user is owner -> true\n");
             return true;
         }
 
