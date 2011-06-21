@@ -34,6 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/* TODO:
+ * - getItemEntry should not take the calendarEntry as parameter, but should query it inline
+ * - all public accessors should either take calendar/items objects or url, but not both
+ */
+
 /* helpers */
 function fixURL(url) {
     if (!url) {

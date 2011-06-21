@@ -2636,7 +2636,7 @@ if (!message) {
         this.checkDavResourceType(aChangeLogListener);
 
       // try to reread the ACLs
-        this.aclMgr.refresh(this.uri);
+        this.aclMgr.refresh(this.uri.spec);
     }
 
 };
