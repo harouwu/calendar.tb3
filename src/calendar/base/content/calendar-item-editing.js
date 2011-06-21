@@ -252,54 +252,45 @@ function isCalendarAvailable(aCalendar) {
  * @param initialDate       (optional) The initial date for new task datepickers
  */
 function openEventDialog(calendarItem, calendar, mode, callback, job, initialDate) {
-    // Set up some defaults
-    mode = mode || "new";
+    let thisArgs = Array.prototype.slice.call(arguments);
+    let thisWindow = window;
 
-    /* ACL code */
-    var compAclEntry = null;
+    if (mode == "modify" && calendar.type == "caldav"
+        && isCalendarAvailable(calendar)) {
+        let realCalendar = calendar.getProperty("cache.uncachedCalendar");
+        if (!realCalendar) {
+            realCalendar = calendar;
+        }
+        realCalendar = realCalendar.wrappedJSObject;
+        var cache = realCalendar.mItemInfoCache;
+        if (cache[calendarItem.id]) {
+            compURL = cache[calendarItem.id].locationPath;
 
-    try {
-        if (mode == "modify" && calendar.type == "caldav"
-            && isCalendarAvailable(calendar)) {
-            let realCalendar = calendar.getProperty("cache.uncachedCalendar");
-            if (!realCalendar) {
-                realCalendar = calendar;
-            }
-            realCalendar = realCalendar.wrappedJSObject;
-            var cache = realCalendar.mItemInfoCache;
-            var compEntry = null;
-            if (cache[item.id]) {
-                compURL = cache[item.id].locationPath;
-
-                let thisArgs = arguments;
-                let thisWindow = window;
-                let skippedThisCall = false; /* will be set if entry is not returned synchronously */
-                let opListener = {
-                    onGetResult: function(calendar, status, itemType, detail, count, items) {
-                        ASSERT(false, "unexpected!");
-                    },
-                    onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                        compAclEntry = opDetail;
-                        if (skippedThisCall) {
-                            openEventDialog.apply(thisWindow, thisArgs);
-                        }
-                    }
-                };
-                let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                                       .getService(Components.interfaces.calICalDAVACLManager);
-                aclMgr.getItemEntry(calendar, itemURL, opListener);
-                skippedThisCall = true;
-                if (!compAclEntry) {
-                    return;
+            let opListener = {
+                onGetResult: function(calendar, status, itemType, detail, count, items) {
+                    ASSERT(false, "unexpected!");
+                },
+                onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                    let compAclEntry = opDetail;
+                    realOpenEventDialog.apply(thisWindow, [compAclEntry].concat(thisArgs));
                 }
-            }
-            else {
-                ASSERT(false, "unexpected!");
-            }
+            };
+            let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                   .getService(Components.interfaces.calICalDAVACLManager);
+            aclMgr.getItemEntry(calendar, compURL, opListener);
+        }
+        else {
+            ASSERT(false, "unexpected!");
         }
     }
-    catch(e) {}
-    /* ACL code */
+    else {
+        realOpenEventDialog.apply(thisWindow, [null].concat(thisArgs));
+    }
+}
+
+function realOpenEventDialog(compAclEntry, calendarItem, calendar, mode, callback, job, initialDate) {
+    // Set up some defaults
+    mode = mode || "new";
 
     calendar = calendar || getSelectedCalendar();
     var calendars = getCalendarManager().getCalendars({});
