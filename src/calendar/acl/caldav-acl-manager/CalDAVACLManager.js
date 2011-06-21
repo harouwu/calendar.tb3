@@ -34,6 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/* helpers */
 function fixURL(url) {
     if (!url) {
         dump("fixURL: no URL! - backtrace\n" + STACK());
@@ -46,12 +47,382 @@ function fixURL(url) {
     return fixedURL;
 }
 
+/* CalDAVACLOfflineManager */
+function CalDAVACLOfflineManager() {
+    this.initDB();
+}
+
+function createStatement(dbconn, sql) {
+    let stmt = dbconn.createStatement(sql);
+    let wrapper = Components.classes["@mozilla.org/storage/statement-wrapper;1"]
+                            .createInstance(Components.interfaces.mozIStorageStatementWrapper);
+    wrapper.initialize(stmt);
+    return wrapper;
+}
+
+CalDAVACLOfflineManager.prototype = {
+    /* calendar entries:
+     * - hasAccessControl
+     * - userPrivileges
+     * - userAddresses
+     * - userIdentities
+     * - userPrincipals
+     * - ownerAddresses
+     * - ownerIdentities
+     * - ownerPrincipal
+     *
+     * item entries:
+     * - userPrivileges
+     */
+
+    initDB: function CalDAVACLOfflineManage_initDB() {
+        let dbFile = cal.getCalendarDirectory();
+        dbFile.append("caldav-acl.sqlite");
+        let dbService = Components.classes["@mozilla.org/storage/service;1"]
+                                  .getService(Components.interfaces.mozIStorageService);
+        this.mDB = dbService.openDatabase(dbFile);
+        let dbVersion = -1;
+        if (this.mDB.tableExists("acl_meta")) {
+            let stmt = createStatement(this.mDB, "SELECT value FROM acl_meta WHERE key = 'version'");
+            let txtVersion = null;
+            try {
+                stmt.step();
+                txtVersion = stmt.row.value;
+            }
+            catch (exc) {
+            }
+            finally {
+                stmt.reset();
+            };
+            if (txtVersion) {
+                dbVersion = parseInt(txtVersion);
+            }
+        }
+        else {
+            dump("tables do NOT exists\n");
+        }
+
+        let updated = false;
+        if (dbVersion < 0) {
+            createStatement(this.mDB, "CREATE TABLE acl_meta (key TEXT PRIMARY KEY ASC NOT NULL, value TEXT NOT NULL)")();
+            createStatement(this.mDB, "CREATE TABLE acl_calendar_entries (url TEXT PRIMARY KEY ASC NOT NULL, has_access_control INTEGER, user_privileges TEXT, user_addresses TEXT, user_principals TEXT, user_identities TEXT, owner_addresses TEXT, owner_principal TEXT, owner_identities TEXT)")();
+            createStatement(this.mDB, "CREATE TABLE acl_item_entries (url TEXT PRIMARY KEY ASC NOT NULL, user_privileges TEXT)")();
+            dbVersion = 0;
+            updated = true;
+        }
+
+        this.prepareStatements();
+        if (updated) {
+            this.setACLMeta("version", String(dbVersion));
+        }
+    },
+
+    prepareStatements: function CalDAVACLOfflineManager_prepareStatements() {
+        /* meta data */
+        this.mGetACLMeta = createStatement(this.mDB,
+                                           "SELECT value FROM acl_meta"
+                                           + " WHERE key = :key");
+        this.mInsertACLMeta = createStatement(this.mDB,
+                                              "INSERT INTO acl_meta"
+                                              + " (key, value)"
+                                              + " VALUES(:key, :value)");
+        this.mUpdateACLMeta = createStatement(this.mDB,
+                                              "UPDATE acl_meta"
+                                              + " SET value = :value"
+                                              + " WHERE key = :key");
+        this.mDeleteACLMeta = createStatement(this.mDB,
+                                              "DELETE FROM acl_meta"
+                                              + " WHERE key = :key");
+
+        /* calendar entries */
+        this.mSelectCalendarEntry = createStatement(this.mDB,
+                                                    "SELECT has_access_control, user_privileges,"
+                                                    +"  user_addresses, user_principals, user_identities,"
+                                                    +"  owner_addresses, owner_principal, owner_identities"
+                                                    + " FROM acl_calendar_entries"
+                                                    + " WHERE url = :url");
+        this.mInsertCalendarEntry = createStatement(this.mDB,
+                                                    "INSERT INTO acl_calendar_entries"
+                                                    + " (url, has_access_control, user_privileges,"
+                                                    + "  user_addresses, user_principals, user_identities,"
+                                                    + "  owner_addresses, owner_principal, owner_identities)"
+                                                    + " VALUES(:url, :has_access_control, :user_privileges,"
+                                                    + " :user_addresses, :user_principals, :user_identities,"
+                                                    + " :owner_addresses, :owner_principal, :owner_identities)");
+        this.mUpdateCalendarEntry = createStatement(this.mDB,
+                                                    "UPDATE acl_calendar_entries"
+                                                    + " SET has_access_control = :has_access_control,"
+                                                    + "        user_privileges = :user_privileges,"
+                                                    + "         user_addresses = :user_addresses,"
+                                                    + "        user_principals = :user_principals,"
+                                                    + "        user_identities = :user_identities,"
+                                                    + "        owner_addresses = :owner_addresses,"
+                                                    + "        owner_principal = :owner_principal,"
+                                                    + "       owner_identities = :owner_identities"
+                                                    + " WHERE url = :url");
+        this.mDeleteCalendarEntry = createStatement(this.mDB, "DELETE FROM acl_calendar_entries WHERE url = :url");
+
+        /* item entries */
+        this.mSelectItemEntry = createStatement(this.mDB,
+                                                "SELECT user_privileges FROM acl_item_entries"
+                                                + " WHERE url = :url");
+        this.mInsertItemEntry = createStatement(this.mDB,
+                                                "INSERT INTO acl_item_entries"
+                                                + " (url, user_privileges)"
+                                                + " VALUES(:url, :user_privileges)");
+        this.mUpdateItemEntry = createStatement(this.mDB,
+                                                "UPDATE acl_item_entries"
+                                                + " SET user_privileges = :user_privileges"
+                                                + " WHERE url = :url");
+        this.mDeleteItemEntry = createStatement(this.mDB,
+                                                "DELETE FROM acl_item_entries"
+                                                + " WHERE url = :url");
+    },
+
+    getACLMeta: function CalDAVACLOfflineManager_getACLMeta(key) {
+        let value = null;
+        this.mGetACLMeta.params.key = key;
+        try {
+            this.mGetACLMeta.step();
+            value = this.mGetACLMeta.row.value;
+        }
+        catch(e) {
+        }
+        finally {
+            this.mGetACLMeta.reset();
+        };
+
+        return value;
+    },
+    setACLMeta: function CalDAVACLOfflineManager_getACLMeta(key, value) {
+        if (value === null) {
+            this.deleteACLMeta(key);
+        }
+        else {
+            let initialValue = this.getACLMeta(key);
+            if (initialValue === null) {
+                this.mInsertACLMeta(key, value);
+            }
+            else {
+                this.mUpdateACLMeta(value, key);
+            }
+        }
+    },
+    deleteACLMeta: function CalDAVACLOfflineManager_deleteACLMeta(key) {
+        this.mDeleteACLMeta(key);
+    },
+
+    _parseStringArray: function CalDAVACLOfflineManager__parseStringArray(data) {
+        let result;
+        if (data.length > 0) {
+            result = data.split("\u001A");
+        }
+        else {
+            result = [];
+        }
+
+        return result;
+    },
+
+    _deserializeIdentities: function CalDAVACLOfflineManager__deserializeIdentities(mgr, calendar, data, entry) {
+        let dataArray = this._parseStringArray(data);
+        let identities = [];
+        for each (let data in dataArray) {
+            if (data && data.length > 0) {
+                let dict = JSON.parse(data);
+                mgr._appendIdentity(identities, dict["displayName"], dict["address"], entry);
+            }
+        }
+        return identities;
+    },
+
+    getCalendarEntry: function CalDAVACLOfflineManager_getCalendarEntry(mgr, calendar, listener) {
+        let url = fixURL(calendar.uri.spec);
+        this.mSelectCalendarEntry.params.url = url;
+        let entry = null;
+        try {
+            if (this.mSelectCalendarEntry.step()) {
+                let row = this.mSelectCalendarEntry.row;
+                entry = new CalDAVAclCalendarEntry(calendar);
+                entry.hasAccessControl = (row.has_access_control == 1);
+                if (entry.hasAccessControl) {
+                    entry.userPrivileges = this._parseStringArray(row.user_privileges);
+                    entry.userAddresses = this._parseStringArray(row.user_addresses);
+                    entry.userPrincipals = this._parseStringArray(row.user_principals);
+                    entry.ownerAddresses = this._parseStringArray(row.owner_addresses);
+                    entry.ownerPrincipal = row.owner_principal;
+                    entry.userIdentities = this._deserializeIdentities(mgr, calendar, row.user_identities, entry);
+                    entry.ownerIdentities = this._deserializeIdentities(mgr, calendar, row.owner_identities, entry);
+                }
+            }
+        }
+        catch(e) {
+            dump("getCalendarEntry: " + e + "\n:line: " +  e.lineNumber + "\n");
+        }
+        finally {
+            this.mSelectCalendarEntry.reset();
+        }
+        listener.onOperationComplete(calendar, (entry ? Components.results.NS_OK : Components.results.NS_ERROR_FAILURE), entry);
+    },
+
+    _serializeStringArray: function CalDAVACLOfflineManager__serializeStringArray(strings) {
+        let serialized = "";
+        if (strings) {
+            serialized = strings.join("\u001A");
+        }
+
+        return serialized;
+    },
+
+    _serializeIdentity: function CalDAVACLOfflineManager__serializeIdentity(identity) {
+        let data = { "displayName": identity.fullName,
+                     "address": identity.email };
+        return JSON.stringify(data);
+    },
+    _serializeIdentities: function CalDAVACLOfflineManager__serializeIdentities(identities) {
+        let strings = [];
+        if (identities) {
+            for each (let identity in identities) {
+                strings.push(this._serializeIdentity(identity));
+            }
+        }
+
+        return this._serializeStringArray(strings);
+    },
+
+    setCalendarEntry: function CalDAVACLOfflineManager_setCalendarEntry(calendar, entry, listener) {
+        // dump("setCalendarEntry\n");
+        let url = fixURL(calendar.uri.spec);
+        let queries = [ this.mInsertCalendarEntry, this.mUpdateCalendarEntry ];
+        let errors = 0;
+        for each (let query in queries) {
+            dump("  query: " + query +"\n");
+            let params = query.params;
+            params.url = url;
+            params.has_access_control = (entry.hasAccessControl ? 1 : 0);
+            if (entry.hasAccessControl) {
+                // dump("has access control...\n");
+                params.user_privileges = this._serializeStringArray(entry.userPrivileges);
+                params.user_addresses = entry.userAddresses.join("\u001A");
+                params.user_principals = this._serializeStringArray(entry.userPrincipals);
+                params.user_identities = this._serializeIdentities(entry.userIdentities);
+                params.owner_addresses = this._serializeStringArray(entry.ownerAddresses);
+                params.owner_principal = entry.ownerPrincipal;
+                params.owner_identities = this._serializeIdentities(entry.ownerIdentities);
+            }
+            else {
+                // dump("has NO access control...\n");
+            }
+            try {
+                query.execute();
+                break;
+            }
+            catch(e) {
+                dump("error: "  + e +  "\n");
+                errors++;
+            }
+            finally {
+                query.reset();
+            }
+        }
+        // dump("acl-db-manager: saved calendar entry, errors = "  + errors + "\n");
+        if (listener) {
+            listener.onOperationComplete(calendar,
+                                         (errors == queries.length
+                                          ? Components.results.NS_ERROR_FAILURE
+                                          : Components.results.NS_OK),
+                                         entry);
+        }
+    },
+
+    getItemEntry: function CalDAVACLOfflineManager_getItemEntry(calEntry, url, listener) {
+        if (!calEntry.hasAccessControl) {
+            dump("No ACL handling -> no cache save required\n");
+            listener.onOperationComplete(url, Components.results.NS_ERROR_FAILURE, null);
+            return;
+        }
+        if (calEntry.userIsOwner) {
+            dump("User is owner -> no cache save required\n");
+            listener.onOperationComplete(url, Components.results.NS_ERROR_FAILURE, null);
+            return;
+        }
+
+        this.mSelectItemEntry.params.url = url;
+        let entry = null;
+        try {
+            if (this.mSelectItemEntry.step()) {
+                let row = this.mSelectItemEntry.row;
+                entry = new CalDAVAclItemEntry(calEntry, url);
+                entry.userPrivileges = this._parseStringArray(row.user_privileges);
+            }
+        }
+        catch(e) {
+            dump("getItemEntry: " + e + "\n:line: " +  e.lineNumber + "\n");
+        }
+        finally {
+            this.mSelectItemEntry.reset();
+        }
+        listener.onOperationComplete(url, (entry ? Components.results.NS_OK : Components.results.NS_ERROR_FAILURE), entry);
+    },
+    setItemEntry: function CalDAVACLOfflineManager_setItemEntry(itemEntry, listener) {
+        // dump("setItemEntry\n");
+        let url = fixURL(itemEntry.parentCalendarEntry.calendar.uri.spec) + itemEntry.url;
+        if (!itemEntry.parentCalendarEntry.hasAccessControl) {
+            dump("No ACL handling -> no cache save required\n");
+            listener.onOperationComplete(url, Components.results.NS_ERROR_FAILURE, null);
+            return;
+        }
+        if (itemEntry.parentCalendarEntry.userIsOwner) {
+            dump("User is owner -> no cache save required\n");
+            listener.onOperationComplete(url, Components.results.NS_ERROR_FAILURE, null);
+            return;
+        }
+
+        let queries = [ this.mInsertItemEntry, this.mUpdateItemEntry ];
+        let errors = 0;
+
+        for each (let query in queries) {
+            let params = query.params;
+            params.url = url;
+            params.user_privileges = this._serializeStringArray(itemEntry.userPrivileges);
+            try {
+                query.execute();
+                break;
+            }
+            catch(e) {
+                errors++;
+            }
+            finally {
+                query.reset();
+            }
+        }
+        // dump("acl-db-manager: saved item entry, errors = "  + errors + "\n");
+        if (listener) {
+            listener.onOperationComplete(url,
+                                         (errors == queries.length
+                                          ? Components.results.NS_ERROR_FAILURE
+                                          : Components.results.NS_OK),
+                                         entry);
+        }
+    }
+};
+
+/* CalDAVACLManager */
+function CalDAVACLManager() {
+    this.calendars = {};
+    this.pendingCalendarOperations = {};
+    this.pendingItemOperations = {};
+    this.identityCount = 0;
+    this.accountMgr = null;
+    this.mOfflineManager = new CalDAVACLOfflineManager();
+}
+
 function xmlEscape(text) {
     return text.replace("&", "&amp;", "g").replace("<", "&lt;", "g");
 }
 
 function xmlUnescape(text) {
-    let s = (""+text).replace(/&lt;/g, "<", "g");
+    let s = String(text).replace(/&lt;/g, "<", "g");
     s = s.replace(/&gt;/g, ">", "g");
     s = s.replace(/&amp;/g, "&",  "g");
 
@@ -82,15 +453,8 @@ function cloneData(oldData) {
     return newData;
 }
 
-function CalDAVACLManager() {
-    this.calendars = {};
-    this.pendingCalendarOperations = {};
-    this.pendingItemOperations = {};
-    this.identityCount = 0;
-    this.accountMgr = null;
-}
-
 CalDAVACLManager.prototype = {
+    mOfflineManager: null,
     calendars: null,
     identityCount: 0,
     accountMgr: null,
@@ -107,13 +471,6 @@ CalDAVACLManager.prototype = {
         }
 
         let url = fixURL(calendar.uri.spec);
-
-        if (this.isOffline) {
-            let entry = this._makeOfflineCalendarEntry(calendar);
-            this._notifyListenerSuccess(listener, calendar, entry);
-
-            return;
-        }
 
         let entry = this.calendars[url];
         if (entry) {
@@ -134,10 +491,18 @@ CalDAVACLManager.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                /* calentry = opDetail */
-                this_.calendars[url] = opDetail;
+                let aEntry;
+                if (Components.isSuccessCode(opStatus)) {
+                    // dump("acl-manager: we received a valid calendar entry, we cache it\n");
+                    aEntry = opDetail;
+                    this_.calendars[url] = aEntry;
+                }
+                else {
+                    // dump("acl-manager: we did not receive a valid calendar entry, we FAKE it\n");
+                    aEntry = this_._makeFallbackCalendarEntry(calendar);
+                }
                 for each (let data in this_.pendingCalendarOperations[url]) {
-                    this_._notifyListenerSuccess(data.listener, data.calendar, opDetail);
+                    this_._notifyListenerSuccess(data.listener, data.calendar, aEntry);
                 }
                 delete this_.pendingCalendarOperations[url];
             }
@@ -145,14 +510,18 @@ CalDAVACLManager.prototype = {
 
         this._queryCalendarEntry(calendar, opListener);
     },
-    _makeOfflineCalendarEntry: function _makeOfflineCalendarEntry(calendar) {
+
+    /* We produce a "fallback" entry when we don't have any means of obtaining the required info, whether online or not.
+     * We then assume that ACL are not supported. */
+    _makeFallbackCalendarEntry: function _makeOfflineCalendarEntry(calendar) {
+        dump("acl-manager: making fallback calendar entry\n");
         let offlineEntry = new CalDAVAclCalendarEntry(calendar);
         offlineEntry.hasAccessControl = false;
         if (!this.accountMgr)
             this._initAccountMgr();
         let defaultAccount = this.accountMgr.defaultAccount;
         let identity = defaultAccount.defaultIdentity;
-        if (identity!=null) {
+        if (identity != null) {
             offlineEntry.userAddresses = ["mailto:" + identity.email];
             offlineEntry.userIdentities = [identity];
             offlineEntry.ownerIdentities = [identity];
@@ -169,26 +538,27 @@ CalDAVACLManager.prototype = {
             },
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                 if (Components.isSuccessCode(opStatus)) {
-                    /* calentry = opDetail */
                     let calEntry = opDetail;
 
-                    if (this_.isOffline) {
-                        let entry = this_._makeOfflineItemEntry(calEntry, itemURL);
-                        this_._notifyListenerSuccess(listener, calendar, entry);
-
-                        return;
+                    let itemEntry = null;
+                    if (!calEntry.hasAccessControl || calEntry.userIsOwner) {
+                        dump("calEntry enables us to skip the querying of the item entry\n");
+                        /* In these case, we do not query the offline cache
+                         neither the calendar collection because we know it's
+                         useless. */
+                        itemEntry = this_._makeFallbackItemEntry(calEntry, itemURL);
                     }
-
-                    let itemEntry = calEntry.entries[itemURL];
+                    else {
+                        itemEntry = calEntry.entries[itemURL];
+                    }
                     if (itemEntry) {
                         listener.onOperationComplete(calendar, Components.results.NS_OK,
                                                      Components.interfaces.calIOperationListener.GET,
                                                      null,
                                                      itemEntry);
+                        return;
                     }
-                    else {
-                        this_._createItemEntry(calEntry, itemURL, listener);
-                    }
+                    this_._createItemEntry(calEntry, itemURL, listener);
                 }
             }
         };
@@ -196,13 +566,12 @@ CalDAVACLManager.prototype = {
     },
     _createItemEntry: function _createItemEntry(calEntry, itemURL, listener) {
         let pendingData = { calendar: calEntry.calendar, listener: listener, itemURL: itemURL };
-        let url = fixURL(calEntry.calendar.uri.spec) + itemURL;
-        if (this.pendingItemOperations[url]) {
-            this.pendingItemOperations[url].push(pendingData);
+        if (this.pendingItemOperations[itemURL]) {
+            this.pendingItemOperations[itemURL].push(pendingData);
             return;
         }
 
-        this.pendingItemOperations[url] = [pendingData];
+        this.pendingItemOperations[itemURL] = [pendingData];
 
         let this_ = this;
         let itemOpListener = {
@@ -211,21 +580,30 @@ CalDAVACLManager.prototype = {
             },
             onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
                 /* itemEntry = opDetail */
-                calEntry.entries[itemURL] = opDetail;
-
-                for each (let data in this_.pendingItemOperations[url]) {
-                    listener.onOperationComplete(data.calendar, Components.results.NS_OK,
-                                                 Components.interfaces.calIOperationListener.GET,
-                                                 data.itemURL,
-                                                 opDetail);
+                let aEntry;
+                if (Components.isSuccessCode(opStatus)) {
+                    aEntry = opDetail;
+                    calEntry.entries[itemURL] = aEntry;
                 }
-                delete this_.pendingItemOperations[url];
+                else {
+                    // dump("acl-manager: we did not receive a valid item entry, we FAKE it\n");
+                    aEntry = this_._makeFallbackItemEntry(calEntry, itemURL);
+                }
+
+                for each (let data in this_.pendingItemOperations[itemURL]) {
+                    let aListener = data["listener"];
+                    aListener.onOperationComplete(data["calendar"], Components.results.NS_OK,
+                                                  Components.interfaces.calIOperationListener.GET,
+                                                  data["itemURL"],
+                                                  aEntry);
+                }
+                delete this_.pendingItemOperations[itemURL];
             }
         };
 
         this._queryItemEntry(calEntry, itemURL, itemOpListener);
     },
-    _makeOfflineItemEntry: function _makeOfflineCalendarEntry(calEntry, itemURL) {
+    _makeFallbackItemEntry: function _makeOfflineCalendarEntry(calEntry, itemURL) {
         let offlineEntry = new CalDAVAclItemEntry(calEntry, itemURL);
 
         return offlineEntry;
@@ -264,17 +642,51 @@ CalDAVACLManager.prototype = {
     },
 
     _notifyListenerSuccess: function _notifyListenerSuccess(listener, calendar, entry) {
-            listener.onOperationComplete(calendar, Components.results.NS_OK,
-                                         Components.interfaces.calIOperationListener.GET,
-                                         null,
-                                         entry);
+        listener.onOperationComplete(calendar, Components.results.NS_OK,
+                                     Components.interfaces.calIOperationListener.GET,
+                                     null,
+                                     entry);
     },
     _markWithNoAccessControl: function _markWithNoAccessControl(data) {
         let entry = data.entry;
         entry.hasAccessControl = false;
-        this._notifyListenerSuccess(data.listener, data.calendar, entry);
+        this.mOfflineManager.setCalendarEntry(data.calendar, entry, null);
+        this._notifyListenerSuccess(data["listener"], data["calendar"], entry);
     },
     _queryCalendarEntry: function _queryCalendar(calendar, listener) {
+        let this_ = this;
+        let offlineListener = {
+            onOperationComplete: function(opCalendar, opStatus, opEntry) {
+                if (Components.isSuccessCode(opStatus)) {
+                    dump("acl-manager: received calendar entry from db\n");
+                    this_._notifyListenerSuccess(listener, opCalendar, opEntry);
+                }
+                else {
+                    if (this_.isOffline) {
+                        dump("acl-manager: we did not receive calendar entry from db + offline -> error\n");
+                        listener.onOperationComplete(opCalendar,
+                                                     Components.results.NS_ERROR_FAILURE,
+                                                     Components.interfaces.calIOperationListener.GET,
+                                                     null, null);
+                    }
+                    else {
+                        dump("acl-manager: we did not receive calendar entry from db -> online query\n");
+                        this_._queryOnlineCalendarEntry(calendar, listener);
+                    }
+                }
+            }
+        };
+        this.mOfflineManager.getCalendarEntry(this, calendar, offlineListener);
+    },
+    _queryOnlineCalendarEntry: function _queryCalendar(calendar, listener) {
+        /* Steps:
+         * 1. acl-options
+         * 2. collection-set
+         * 3. user-address-set (owner) or markWithNoAccessControl
+         * 4. principal-match
+         * 5. user-address-set (user)
+         */
+
         let entry = new CalDAVAclCalendarEntry(calendar);
         let data = {method: "acl-options", calendar: calendar, entry: entry, listener: listener};
         let url = fixURL(calendar.uri.spec);
@@ -413,8 +825,7 @@ CalDAVACLManager.prototype = {
             this._markWithNoAccessControl(data);
         }
     },
-    _userAddressSetCallback: function _collectionSetCallback(status, url, headers,
-                                                             response, data) {
+    _userAddressSetCallback: function _userAddressSetCallback(status, url, headers, response, data) {
         if (status == 207) {
             let entry = data["entry"];
             let xParser = Components.classes['@mozilla.org/xmlextras/domparser;1']
@@ -458,6 +869,7 @@ CalDAVACLManager.prototype = {
             }
 
             if (entry.nbrAddressSets) {
+                this.mOfflineManager.setCalendarEntry(data["calendar"], entry, null);
                 this._notifyListenerSuccess(data["listener"], data["calendar"], entry);
             } else {
                 entry.nbrAddressSets = 1;
@@ -616,6 +1028,33 @@ CalDAVACLManager.prototype = {
 
     /* component controller */
     _queryItemEntry: function _queryItem(calEntry, itemURL, listener) {
+        let this_ = this;
+        let offlineListener = {
+            onOperationComplete: function(aURL, opStatus, opEntry) {
+                if (Components.isSuccessCode(opStatus)) {
+                    dump("acl-manager: received item entry from db\n");
+                    this_._notifyListenerSuccess(listener, calEntry.calendar, opEntry);
+                }
+                else {
+                    if (this_.isOffline) {
+                        dump("acl-manager: itemEntry not found in offline cache, faking it due to offline mode\n");
+                        listener.onOperationComplete(calEntry.calendar,
+                                                     Components.results.NS_ERROR_FAILURE,
+                                                     Components.interfaces.calIOperationListener.GET,
+                                                     null, null);
+                    }
+                    else {
+                        dump("acl-manager: itemEntry not found in offline cache, querying it online...\n");
+                        this_._queryOnlineItemEntry(calEntry, itemURL, listener);
+                    }
+                }
+            }
+        };
+        let fullItemURL = fixURL(calEntry.calendar.uri.spec) + itemURL;
+        this.mOfflineManager.getItemEntry(calEntry, fullItemURL, offlineListener);
+    },
+
+    _queryOnlineItemEntry: function _queryItem(calEntry, itemURL, listener) {
         let entry = new CalDAVAclItemEntry(calEntry, itemURL);
         let data = {calendar: calEntry.calendar, method: "item-privilege-set", entry: entry, listener: listener};
 
@@ -635,6 +1074,7 @@ CalDAVACLManager.prototype = {
         // dump("\n\n\nitem-privilege-set:\n" + response + "\n\n\n");
 
         data.entry.userPrivileges = this._parsePrivileges(queryDoc);
+        this.mOfflineManager.setItemEntry(data["entry"], {});
         this._notifyListenerSuccess(data["listener"], data["calendar"], data["entry"]);
     },
     _parsePrivileges: function _parsePrivileges(queryDoc) {
@@ -775,8 +1215,6 @@ CalDAVAclCalendarEntry.prototype = {
         else
             result = true;
 
-        //         dump("user is owner: " + result + "\n");
-
         return result;
     },
     get userCanAddItems() {
@@ -835,8 +1273,8 @@ CalDAVAclCalendarEntry.prototype = {
     }
 };
 
-function CalDAVAclItemEntry(calendarEntry, url) {
-    this.parentCalendarEntry = calendarEntry;
+function CalDAVAclItemEntry(calEntry, url) {
+    this.parentCalendarEntry = calEntry;
     this.url = url;
 }
 
@@ -849,37 +1287,46 @@ CalDAVAclItemEntry.prototype = {
         return this.parentCalendarEntry.userIsOwner;
     },
     get userCanModify() {
+        dump("userCanModify\n");
         // dump("this.url: " + this.url + "\n");
         // dump("this.userPrivileges: " + this.userPrivileges + "\n");
         // dump("this.parentCalendarEntry.userPrivileges: "
         // + this.parentCalendarEntry.userPrivileges + "\n");
 
-        let result;
-        if (this.parentCalendarEntry.hasAccessControl) {
-            let index = (this.url
-                         ? this.userPrivileges.indexOf("{DAV:}write")
-                         : this.parentCalendarEntry.userPrivileges.indexOf("{DAV:}bind"));
-            result = (index > -1);
+        if (!this.parentCalendarEntry.hasAccessControl) {
+            dump("has not access control -> true\n");
+            return true;
         }
-        else
-            result = true;
+        if (this.parentCalendarEntry.userIsOwner) {
+            dump("user is owner -> true\n");
+            return true;
+        }
 
-        return result;
+        let index = (this.url
+                     ? this.userPrivileges.indexOf("{DAV:}write")
+                     : this.parentCalendarEntry.userPrivileges.indexOf("{DAV:}bind"));
+        return (index > -1);
     },
     get userCanRespond() {
+        // dump("userCanRespond\n");
         return (!this.parentCalendarEntry.hasAccessControl
+                || this.parentCalendarEntry.userIsOwner
                 || (this.userPrivileges
                         .indexOf("{urn:inverse:params:xml:ns:inverse-dav}respond-to-component")
                     > -1));
     },
     get userCanViewAll() {
+        // dump("userCanViewAll\n");
         return (!this.parentCalendarEntry.hasAccessControl
+                || this.parentCalendarEntry.userIsOwner
                 ||  (this.userPrivileges
                          .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-whole-component")
                      > -1));
     },
     get userCanViewDateAndTime() {
+        // dump("userCanViewDateAndTime\n");
         return (!this.parentCalendarEntry.hasAccessControl
+                || this.parentCalendarEntry.userIsOwner
                 || (this.userPrivileges
                         .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-date-and-time")
                     > -1));
