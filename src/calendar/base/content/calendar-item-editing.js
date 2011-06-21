@@ -264,7 +264,7 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
         realCalendar = realCalendar.wrappedJSObject;
         var cache = realCalendar.mItemInfoCache;
         if (cache[calendarItem.id]) {
-            compURL = cache[calendarItem.id].locationPath;
+            let compURL = cache[calendarItem.id].locationPath;
 
             let opListener = {
                 onGetResult: function(calendar, status, itemType, detail, count, items) {
