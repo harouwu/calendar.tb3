@@ -34,11 +34,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/* TODO:
- * - getItemEntry should not take the calendarEntry as parameter, but should query it inline
- * - all public accessors should either take calendar/items objects or url, but not both
- */
-
 /* helpers */
 function fixURL(url) {
     if (!url) {
@@ -1202,6 +1197,10 @@ CalDAVACLManager.prototype = {
         }
     },
 
+    destroyEntry: function destroyEntry(aEntry) {
+        let url = fixURL(aEntry.uri.spec);
+    },
+
     QueryInterface: function(aIID) {
         if (!aIID.equals(Components.interfaces.nsISupports)
             && !aIID.equals(Components.interfaces.calICalDAVACLManager))
@@ -1216,6 +1215,7 @@ function CalDAVAclCalendarEntry(calendar) {
     this.uri = calendar.uri;
     this.entries = {};
     this.hasAccessControl = false;
+    this.userPrivileges = [];
     this.mValid = true;
 }
 
@@ -1262,6 +1262,7 @@ CalDAVAclCalendarEntry.prototype = {
 
         // dump("has access control: " + this.hasAccessControl + "\n");
         return (!this.hasAccessControl
+                || this.userIsOwner
                 || (this.userPrivileges.indexOf("{DAV:}bind")
                     > -1));
     },
@@ -1273,6 +1274,7 @@ CalDAVAclCalendarEntry.prototype = {
         // dump("indexof unbind: "
         // + this.userPrivileges.indexOf("{DAV:}unbind") + "\n");
         return (!this.hasAccessControl
+                || this.userIsOwner
                 || (this.userPrivileges.indexOf("{DAV:}unbind")
                     > -1));
     },
@@ -1325,6 +1327,7 @@ CalDAVAclCalendarEntry.prototype = {
 
 function CalDAVAclItemEntry(calEntry, url) {
     this.parentCalendarEntry = calEntry;
+    this.userPrivileges = [];
     this.url = url;
 }
 
@@ -1350,34 +1353,25 @@ CalDAVAclItemEntry.prototype = {
             return true;
         }
 
-        let index = (this.url
-                     ? this.userPrivileges.indexOf("{DAV:}write")
-                     : this.parentCalendarEntry.userPrivileges.indexOf("{DAV:}bind"));
-        return (index > -1);
+        return (this.userPrivileges.indexOf("{DAV:}write") > -1);
     },
     get userCanRespond() {
         // dump("userCanRespond\n");
         return (!this.parentCalendarEntry.hasAccessControl
                 || this.parentCalendarEntry.userIsOwner
-                || (this.userPrivileges
-                        .indexOf("{urn:inverse:params:xml:ns:inverse-dav}respond-to-component")
-                    > -1));
+                || (this.userPrivileges.indexOf("{urn:inverse:params:xml:ns:inverse-dav}respond-to-component") > -1));
     },
     get userCanViewAll() {
         // dump("userCanViewAll\n");
         return (!this.parentCalendarEntry.hasAccessControl
                 || this.parentCalendarEntry.userIsOwner
-                ||  (this.userPrivileges
-                         .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-whole-component")
-                     > -1));
+                ||  (this.userPrivileges.indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-whole-component") > -1));
     },
     get userCanViewDateAndTime() {
         // dump("userCanViewDateAndTime\n");
         return (!this.parentCalendarEntry.hasAccessControl
                 || this.parentCalendarEntry.userIsOwner
-                || (this.userPrivileges
-                        .indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-date-and-time")
-                    > -1));
+                || (this.userPrivileges.indexOf("{urn:inverse:params:xml:ns:inverse-dav}view-date-and-time") > -1));
     },
 
     QueryInterface: function(aIID) {
