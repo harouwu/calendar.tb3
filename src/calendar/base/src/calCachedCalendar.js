@@ -139,7 +139,7 @@ function calCachedCalendar(uncachedCalendar) {
     /* start reconciling potential offline items if we start in online mode
      */
     if (!this.offline) {
-        this.reconcileAddedItems();
+        this.reconcileAddedItems(false);
     }
 }
 calCachedCalendar.prototype = {
@@ -321,11 +321,11 @@ calCachedCalendar.prototype = {
             // Going offline: (XXX get items before going offline?) => we may ask the user to stay online a bit longer
         } else {
             // Going online (start replaying changes to the remote calendar)
-            this.reconcileAddedItems();
+            this.reconcileAddedItems(true);
         }
     },
 
-    reconcileAddedItems: function cCC_reconcileAddedItems() {
+    reconcileAddedItems: function cCC_reconcileAddedItems(aTriggerRefresh) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -345,7 +345,7 @@ calCachedCalendar.prototype = {
                 storage.resetItemOfflineFlag(detail, resetListener);
                 this.itemCount--;
                 if (this.itemCount == 0) {
-                    this_.reconcileModifiedItems();
+                    this_.reconcileModifiedItems(aTriggerRefresh);
                 }
             }
         };
@@ -371,7 +371,7 @@ calCachedCalendar.prototype = {
                         }
                     }
                     else {
-                        this_.reconcileModifiedItems();
+                        this_.reconcileModifiedItems(aTriggerRefresh);
                     }
                 }
                 delete this.items;
@@ -381,7 +381,7 @@ calCachedCalendar.prototype = {
         this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_ALL_ITEMS | calICalendar.ITEM_FILTER_OFFLINE_CREATED, //calICalendar.ITEM_FILTER_TYPE_ALL does not include calICalendar.ITEM_FILTER_COMPLETED_ALL,
                                       0, null, null, getListener);
     },
-    reconcileModifiedItems: function cCC_reconcileModifiedItems() {
+    reconcileModifiedItems: function cCC_reconcileModifiedItems(aTriggerRefresh) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -401,7 +401,7 @@ calCachedCalendar.prototype = {
                 storage.resetItemOfflineFlag(detail, resetListener);
                 this.itemCount--;
                 if (this.itemCount == 0) {
-                    this_.reconcileDeletedItems();
+                    this_.reconcileDeletedItems(aTriggerRefresh);
                 }
             }
         };
@@ -427,7 +427,7 @@ calCachedCalendar.prototype = {
                         }
                     }
                     else {
-                        this_.reconcileDeletedItems();
+                        this_.reconcileDeletedItems(aTriggerRefresh);
                     }
                 }
                 delete this.items;
@@ -437,7 +437,7 @@ calCachedCalendar.prototype = {
         this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_MODIFIED | calICalendar.ITEM_FILTER_ALL_ITEMS ,//calICalendar.ITEM_FILTER_TYPE_ALL,
                                       0, null, null, getListener);
     },
-    reconcileDeletedItems: function cCC_reconcileDeletedItems() {
+    reconcileDeletedItems: function cCC_reconcileDeletedItems(aTriggerRefresh) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -456,7 +456,7 @@ calCachedCalendar.prototype = {
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 storage.resetItemOfflineFlag(detail, resetListener);
                 this.itemCount--;
-                if (this.itemCount == 0) {
+                if (this.itemCount == 0 && aTriggerRefresh) {
                     this_.refresh();
                 }
             }
@@ -482,7 +482,7 @@ calCachedCalendar.prototype = {
                             this_.deleteItem(aItem, deleteListener);
                         }
                     }
-                    else {
+                    else if (aTriggerRefresh) {
                         this_.refresh();
                     }
                 }
