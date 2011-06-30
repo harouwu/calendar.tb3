@@ -561,10 +561,9 @@ calCachedCalendar.prototype = {
                 }
             }
         }
-        try{
-            let unCachedCalendar = this.mUncachedCalendar.QueryInterface(Components.interfaces.calIChangeLog);
-            return unCachedCalendar.adoptItemOrUseCache(item,true,opListener);
-        } catch(e){ }
+        if(this.supportsChangeLog){
+            return this.mUncachedCalendar.adoptItemOrUseCache(item,true,opListener);
+        }
         return this.mUncachedCalendar.adoptItem(item, opListener);
     },
     adoptOfflineItem: function(item, listener) {
@@ -614,10 +613,9 @@ calCachedCalendar.prototype = {
                 }
             }
         }
-        try{
-            let unCachedCalendar = this.mUncachedCalendar.QueryInterface(Components.interfaces.calIChangeLog);
-            return unCachedCalendar.modifyItemOrUseCache(newItem, oldItem,true,opListener);
-        } catch(e){ }
+        if (this.supportsChangeLog){
+            return this.mUncachedCalendar.modifyItemOrUseCache(newItem, oldItem,true,opListener);
+        }
         return this.mUncachedCalendar.modifyItem(newItem, oldItem, opListener);
     },
     modifyOfflineItem: function(newItem, oldItem, listener) {
@@ -666,10 +664,9 @@ calCachedCalendar.prototype = {
                 }
             }
         }
-        try{
-            let unCachedCalendar = this.mUncachedCalendar.QueryInterface(Components.interfaces.calIChangeLog);
-            return unCachedCalendar.deleteItemOrUseCache(item, true,opListener);
-        } catch(e){ }
+        if(this.supportsChangeLog){
+            return this.mUncachedCalendar.deleteItemOrUseCache(item, true,opListener);
+        }
         return this.mUncachedCalendar.deleteItem(item, opListener);
     },
     deleteOfflineItem: function(item, listener) {

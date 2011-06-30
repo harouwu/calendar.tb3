@@ -293,48 +293,29 @@ calDavCalendar.prototype = {
     adoptItemOrUseCache: function caldav_adoptItemOrUseCache(aItem, useCache, aListener){
         LOG("[calDavCalendar.js] adoptItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
-        if(useCache){//Means we are to ignore whatever is in the cache, overwrite
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, id, detail);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //put item forcibly in cache
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                if (Components.isSuccessCode(status)) {
+                    if(aListener){
+                        aListener.onOperationComplete(this_, status, opType, id, detail);
+                    }
+                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
+                    if(useCache){ //Write into Cache when a failure occurs
                         var listener = {
-                            onGetResult: function(calendar, status, itemType, detail, count, items) {
-                                
-                            },
-                            onOperationComplete: function(calendar, status, opType, id, detail){
-                                
-                            }
-                        };    
-                        this_.adoptOfflineItem(aItem,listener);
+                           onGetResult: function(calendar, status, itemType, detail, count, items) {
+                           },
+                           onOperationComplete: function(calendar, status, opType, id, detail){
+                           }
+                       };    
+                       this_.adoptOfflineItem(aItem,listener);
                     }
                 }
-            };
-            this_.adoptItem(aItem,opListener);
-        } else { //Don't ignore whatever is in the cache
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, id, detail);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //Do Nothing here,
-                    }
-                }
-            };
-            this_.adoptItem(aItem,opListener);    
-        }
+            }
+        };
+        this_.adoptItem(aItem,opListener);    
     },
     
     adoptOfflineItem: function(item, listener) {
@@ -345,62 +326,42 @@ calDavCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (Components.isSuccessCode(status)) {
-                    var storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
+                    let storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
                     storage.addOfflineItem(detail, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);
                 }
             }
         };
-        let cachedStorageCalendar = this.mOfflineStorage.QueryInterface(Components.interfaces.calICalendar);
-        cachedStorageCalendar.adoptItem(item, opListener);
+        this_.mOfflineStorage.adoptItem(item, opListener);
     },
     
     modifyItemOrUseCache: function caldav_modifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener){
         LOG("[calDavCalendar.js] modifyItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
-        if(useCache){//Means we are to ignore whatever is in the cache, overwrite
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, id, detail);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //put item forcibly in cache
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                if (Components.isSuccessCode(status)) {
+                    if(aListener){
+                        aListener.onOperationComplete(this_, status, opType, id, detail);
+                    }
+                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
+                    if (useCache){
                         var listener = {
-                            onGetResult: function(calendar, status, itemType, detail, count, items) {
-                                
+                            onGetResult: function(calendar, status, itemType, detail, count, items) {          
                             },
                             onOperationComplete: function(calendar, status, opType, id, detail){
-                                
                             }
                         };    
                         this_.modifyOfflineItem(aNewItem, aOldItem,listener);
                     }
                 }
-            };
-            this_.modifyItem(aNewItem, aOldItem,opListener);
-        } else { //Don't ignore whatever is in the cache
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, id, detail);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //Do Nothing here,
-                    }
-                }
-            };
-            this_.modifyItem(aNewItem, aOldItem, opListener);    
-        }
+            }
+        };
+        this_.modifyItem(aNewItem, aOldItem, opListener);    
     },
     
     modifyOfflineItem: function(newItem, oldItem, listener) {
@@ -411,67 +372,47 @@ calDavCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (Components.isSuccessCode(status)) {
-                    var storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
+                    let storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
                     storage.modifyOfflineItem(detail, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);
                 }
             }
         };
-        let cachedStorageCalendar = this.mOfflineStorage.QueryInterface(Components.interfaces.calICalendar);
-        cachedStorageCalendar.modifyItem(newItem, oldItem, opListener);
+        this_.mOfflineStorage.modifyItem(newItem, oldItem, opListener);
     },
     
     deleteItemOrUseCache: function caldav_deleteItemOrUseCache(aItem, useCache, aListener){
         LOG("[caldavCalendar.js] deleteItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
-        if(useCache){//Means we are to ignore whatever is in the cache, overwrite
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //delete item forcibly from cache
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                if (Components.isSuccessCode(status)) {
+                    if(aListener){
+                        aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
+                    }
+                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
+                    if(useCache){
                         var listener = {
                             onGetResult: function(calendar, status, itemType, detail, count, items) {
-                                
                             },
-                            onOperationComplete: function(calendar, status, opType, id, detail){
-                                
+                            onOperationComplete: function(calendar, status, opType, id, detail){    
                             }
                         };    
                         this_.deleteOfflineItem(aItem,listener);
                     }
                 }
-            };
-            this_.deleteItem(aItem,opListener);
-        } else { //Don't ignore whatever is in the cache
-            let opListener = {
-                onGetResult: function(calendar, status, itemType, detail, count, items) {
-                    ASSERT(false, "unexpected!");
-                },
-                onOperationComplete: function(calendar, status, opType, id, detail) {
-                    if (Components.isSuccessCode(status)) {
-                        if(aListener){
-                            aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
-                        }
-                    } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                        //Do Nothing here,
-                    }
-                }
-            };
-            this_.deleteItem(aItem,opListener);    
-        }
+            }
+        };
+        this_.deleteItem(aItem,opListener);    
     },
     
     deleteOfflineItem: function(item, listener) {
         /* We do not delete the item from the cache, as we will need it when reconciling the cache content and the server content. */
-        var storage = this.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
+        let storage = this.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
         storage.deleteOfflineItem(item, listener);
     },
 
