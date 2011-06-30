@@ -171,7 +171,7 @@ interface calIChangeLog : nsISupports {
      *
      * @param useCache          use the cache for handling availability errors
      *
-     * When 'useCache' is set, failure to perform the operation with result in
+     * When 'useCache' is set, failure to perform the operation will result in
      * a write in the cache with the corresponding offline operation, when the
      * backend supports it. In that case, the listener will thus always
      * receive a success code. When unset, the behaviour is similar to the
