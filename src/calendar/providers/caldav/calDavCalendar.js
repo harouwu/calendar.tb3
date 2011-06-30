@@ -830,7 +830,7 @@ calDavCalendar.prototype = {
                 // the current state of the item
                 // Observers will be notified in getUpdatedItem()
                 thisCalendar.getUpdatedItem(parentItem, aListener);
-            } else if(status >= 502 && status <= 504 ){
+            } else if((status >= 500 && status <= 510 ) || status == 0){
                 LOG("[calDavCalendar.js] doAdoptItem received status code of server unavailability[50x error], going into offline mode. \n");
                 thisCalendar.readOnly = false;
                 thisCalendar.disabled = true;
@@ -940,7 +940,7 @@ calDavCalendar.prototype = {
             } else if (status == 412) {
                 thisCalendar.promptOverwrite(CALDAV_MODIFY_ITEM, aNewItem,
                                              aListener, aOldItem);
-            } else if (status >= 502 && status <= 504 ) {
+            } else if ((status >= 500 && status <= 510 ) || status == 0) {
                 LOG("[calDavCalendar.js] doModifyItem recd. status code of server unavailibity [50x], hence calling offline functions.\n");
                 thisCalendar.readOnly = false;
                 thisCalendar.disabled = true;
@@ -1053,7 +1053,7 @@ calDavCalendar.prototype = {
                                                        thisCalendar);
                 httpchannel2.requestMethod = "HEAD";
                 cal.sendHttpRequest(cal.createStreamLoader(), httpchannel2, delListener2);
-            } else if (status >= 502 && status <= 504) {
+            } else if ((status >= 500 && status <= 510 ) || status == 0) {
                 LOG("[calDavCalendar.js] doDeleteItem encountered that the calendar is unavailable, so its going offline for a while\n");
                 thisCalendar.readOnly = false;
                 thisCalendar.disabled = true;
@@ -1079,7 +1079,7 @@ calDavCalendar.prototype = {
                 if (status == 404) {
                     // someone else already deleted it
                     return;
-                } else if (status >= 502 && status <= 504) {
+                } else if ((status >= 500 && status <= 510 ) || status == 0) {
                     LOG("[calDavCalendar.js] doDeleteItem encountered that the calendar is unavailable, so its going offline for a while\n");
                     thisCalendar.readOnly = false;
                     thisCalendar.disabled = true;
