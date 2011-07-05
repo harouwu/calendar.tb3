@@ -280,7 +280,7 @@ function openEventDialog(calendarItem, calendar, mode, callback, job, initialDat
             aclMgr.getItemEntry(calendar, compURL, opListener);
         }
         else {
-            ASSERT(false, "unexpected!");
+            realOpenEventDialog.apply(thisWindow, [null].concat(thisArgs));
         }
     }
     else {
