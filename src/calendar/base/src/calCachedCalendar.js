@@ -342,10 +342,12 @@ calCachedCalendar.prototype = {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                storage.resetItemOfflineFlag(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0) {
-                    this_.reconcileModifiedItems(aTriggerRefresh);
+                if(Components.isSuccessCode(status)){
+                    storage.resetItemOfflineFlag(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0) {
+                        this_.reconcileModifiedItems(aTriggerRefresh);
+                    }    
                 }
             }
         };
@@ -398,11 +400,14 @@ calCachedCalendar.prototype = {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                storage.resetItemOfflineFlag(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0) {
-                    this_.reconcileDeletedItems(aTriggerRefresh);
+                if(Components.isSuccessCode(status)){
+                    storage.resetItemOfflineFlag(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0) {
+                        this_.reconcileDeletedItems(aTriggerRefresh);
+                    }    
                 }
+                
             }
         };
 
@@ -454,10 +459,12 @@ calCachedCalendar.prototype = {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                this_.mCachedCalendar.deleteItem(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0 && aTriggerRefresh) {
-                    this_.refresh();
+                if(Components.isSuccessCode(status)){
+                    this_.mCachedCalendar.deleteItem(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0 && aTriggerRefresh) {
+                        this_.refresh();
+                    }   
                 }
             }
         };
@@ -554,7 +561,7 @@ calCachedCalendar.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status)) {
+                if (Components.isSuccessCode(status) && !this_.supportsChangeLog) {
                     this_.mCachedCalendar.addItem(detail, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);
@@ -562,7 +569,7 @@ calCachedCalendar.prototype = {
             }
         }
         if(this.supportsChangeLog){
-            return this.mUncachedCalendar.adoptItemOrUseCache(item,true,opListener);
+            return this.mUncachedCalendar.addItemOrUseCache(item, true, opListener);
         }
         return this.mUncachedCalendar.adoptItem(item, opListener);
     },
@@ -614,7 +621,7 @@ calCachedCalendar.prototype = {
             }
         }
         if (this.supportsChangeLog){
-            return this.mUncachedCalendar.modifyItemOrUseCache(newItem, oldItem,true,opListener);
+            return this.mUncachedCalendar.modifyItemOrUseCache(newItem, oldItem, true, opListener);
         }
         return this.mUncachedCalendar.modifyItem(newItem, oldItem, opListener);
     },
@@ -665,7 +672,7 @@ calCachedCalendar.prototype = {
             }
         }
         if(this.supportsChangeLog){
-            return this.mUncachedCalendar.deleteItemOrUseCache(item, true,opListener);
+            return this.mUncachedCalendar.deleteItemOrUseCache(item, true, opListener);
         }
         return this.mUncachedCalendar.deleteItem(item, opListener);
     },
