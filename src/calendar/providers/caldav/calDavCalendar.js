@@ -289,36 +289,36 @@ calDavCalendar.prototype = {
         let newItem = aItem.clone();
         return this.adoptItemOrUseCache(newItem, useCache, aListener);
     },
-    
+
     adoptItemOrUseCache: function caldav_adoptItemOrUseCache(aItem, useCache, aListener){
         LOG("[calDavCalendar.js] adoptItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
-        
+
         let opListener = {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
-                   
+
                     var listener = {
                         onGetResult: function(calendar, status, itemType, detail, count, items) {
                         },
                         onOperationComplete: function(calendar, status, opType, id, detail){
                             aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED, opType, id, detail);
                         }
-                   };    
+                   };
                    this_.adoptOfflineItem(aItem,listener);
-                
+
                 } else {
                     aListener.onOperationComplete(this_, status, opType, id, detail);
                 }
             }
         };
-        
-        this_.adoptItem(aItem,opListener);    
+
+        this_.adoptItem(aItem,opListener);
     },
-    
+
     adoptOfflineItem: function(item, listener) {
         var this_ = this;
         var opListener = {
@@ -336,7 +336,7 @@ calDavCalendar.prototype = {
         };
         this_.mOfflineStorage.adoptItem(item, opListener);
     },
-    
+
     modifyItemOrUseCache: function caldav_modifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener){
         LOG("[calDavCalendar.js] modifyItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
@@ -346,24 +346,24 @@ calDavCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
-                    
+
                     var listener = {
-                        onGetResult: function(calendar, status, itemType, detail, count, items) {          
+                        onGetResult: function(calendar, status, itemType, detail, count, items) {
                         },
                         onOperationComplete: function(calendar, status, opType, id, detail){
                             aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED, opType, id, detail);
                         }
-                    };    
+                    };
                     this_.modifyOfflineItem(aNewItem, aOldItem,listener);
-                
+
                 } else {
                     aListener.onOperationComplete(calendar, status, opType, id, detail);
                 }
             }
         };
-        this_.modifyItem(aNewItem, aOldItem, opListener);    
+        this_.modifyItem(aNewItem, aOldItem, opListener);
     },
-    
+
     modifyOfflineItem: function(newItem, oldItem, listener) {
         var this_ = this;
         var opListener = {
@@ -381,7 +381,7 @@ calDavCalendar.prototype = {
         };
         this_.mOfflineStorage.modifyItem(newItem, oldItem, opListener);
     },
-    
+
     deleteItemOrUseCache: function caldav_deleteItemOrUseCache(aItem, useCache, aListener){
         LOG("[caldavCalendar.js] deleteItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
@@ -391,24 +391,24 @@ calDavCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
-                    
+
                 var listener = {
                     onGetResult: function(calendar, status, itemType, detail, count, items) {
                     },
                     onOperationComplete: function(calendar, status, opType, id, detail){
                         aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
                     }
-                };    
+                };
                 this_.deleteOfflineItem(aItem,listener);
-                    
+
                 } else {
                     aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
                 }
             }
         };
-        this_.deleteItem(aItem,opListener);    
+        this_.deleteItem(aItem,opListener);
     },
-    
+
     deleteOfflineItem: function(item, listener) {
         /* We do not delete the item from the cache, as we will need it when reconciling the cache content and the server content. */
         let storage = this.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
@@ -770,7 +770,7 @@ calDavCalendar.prototype = {
                 // the current state of the item
                 // Observers will be notified in getUpdatedItem()
                 thisCalendar.getUpdatedItem(parentItem, aListener);
-            } else if((status >= 500 && status <= 510 ) || status == 0){
+            } else if ((status >= 500 && status <= 510) || status == 0) {
                 LOG("[calDavCalendar.js] doAdoptItem received status code of server unavailability[50x error], going into offline mode. \n");
                 thisCalendar.readOnly = false;
                 thisCalendar.disabled = true;
@@ -2800,7 +2800,7 @@ if (!message) {
       // try to reread the ACLs
         this.aclMgr.refresh(this.uri.spec);
     },
-    
+
     reconcileAddedItems: function cCC_reconcileAddedItems(aTriggerRefresh) {
         let this_ = this;
         let storage = this.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
@@ -2823,9 +2823,9 @@ if (!message) {
                     this.itemCount--;
                     if (this.itemCount == 0) {
                         this_.reconcileModifiedItems(aTriggerRefresh);
-                    }    
+                    }
                 }
-                
+
             }
         };
 
@@ -2882,7 +2882,7 @@ if (!message) {
                     this.itemCount--;
                     if (this.itemCount == 0) {
                         this_.reconcileDeletedItems(aTriggerRefresh);
-                    }    
+                    }
                 }
             }
         };
@@ -2940,7 +2940,7 @@ if (!message) {
                     this.itemCount--;
                     if (this.itemCount == 0 && aTriggerRefresh) {
                         this_.refresh();
-                    }    
+                    }
                 }
             }
         };
@@ -2975,7 +2975,7 @@ if (!message) {
 
         this.mOfflineStorage.getItems(kcalICalendar.ITEM_FILTER_OFFLINE_DELETED | kcalICalendar.ITEM_FILTER_ALL_ITEMS, //| calICalendar.ITEM_FILTER_TYPE_ALL,
                                       0, null, null, getListener);
-    }    
+    }
 };
 
 
