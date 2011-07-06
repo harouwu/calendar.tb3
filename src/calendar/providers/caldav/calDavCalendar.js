@@ -82,7 +82,7 @@ function calDavCalendar() {
     this.readOnly = true;
     this.disabled = true;
     /* ACL code */
-    this.mHasACLLoaded = false;
+    this.mACLEntry = null;
     /* /ACL code */
 
     let refreshDelay = getPrefSafe("calendar.caldav.refresh.initialdelay", 0);
@@ -142,11 +142,6 @@ calDavCalendar.prototype = {
 
     get isCached() {
         return (this != this.superCalendar);
-    },
-
-    get aclMgr() {
-        return Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
-                         .getService(Components.interfaces.calICalDAVACLManager);
     },
 
     ensureTargetCalendar: function caldav_ensureTargetCalendar() {
@@ -563,25 +558,12 @@ calDavCalendar.prototype = {
     },
 
     getProperty: function caldav_getProperty(aName) {
-        let aclEntry = null;
-        let opListener = {
-            onGetResult: function(calendar, status, itemType, detail, count, items) {
-                ASSERT(false, "unexpected!");
-            },
-            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                aclEntry = opDetail;
-            }
-        };
-        if (this.uri) {
-            this.aclMgr.getCalendarEntry(this, opListener);
-        }
-
-        if (aclEntry && aclEntry.hasAccessControl) {
+        if (this.mACLEntry && this.mACLEntry.hasAccessControl) {
             // Inverse inc. ACL addition
             var ownerIdentities = {};
             switch (aName) {
             case "organizerId":
-                aclEntry.getOwnerIdentities({}, ownerIdentities);
+                this.mACLEntry.getOwnerIdentities({}, ownerIdentities);
                 ownerIdentities = ownerIdentities.value;
                 if (ownerIdentities.length > 0) {
                     return "mailto:" + ownerIdentities[0].email;
@@ -591,7 +573,7 @@ calDavCalendar.prototype = {
                 break;
 
             case "organizerCN":
-                aclEntry.getOwnerIdentities({}, ownerIdentities);
+                this.mACLEntry.getOwnerIdentities({}, ownerIdentities);
                 ownerIdentities = ownerIdentities.value;
                 if (ownerIdentities.length > 0) {
                     return ownerIdentities[0].fullName;
@@ -599,7 +581,7 @@ calDavCalendar.prototype = {
                 break;
 
             case "imip.identity":
-                aclEntry.getOwnerIdentities({}, ownerIdentities);
+                this.mACLEntry.getOwnerIdentities({}, ownerIdentities);
                 ownerIdentities = ownerIdentities.value;
                 if (ownerIdentities.length > 0) {
                     return ownerIdentities[0];
@@ -1305,19 +1287,21 @@ calDavCalendar.prototype = {
     },
 
     safeRefresh: function caldav_safeRefresh(aChangeLogListener) {
-        if (!this.mHasACLLoaded) {
-            this.mHasACLLoaded = true;
+        if (!this.mACLEntry) {
             let thisCalendar = this;
             let opListener = {
                 onGetResult: function(calendar, status, itemType, detail, count, items) {
                     ASSERT(false, "unexpected!");
                 },
                 onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                    thisCalendar.mACLEntry = opDetail;
                     thisCalendar.safeRefresh(aChangeLogListener);
                 }
             };
 
-            this.aclMgr.getCalendarEntry(this, opListener);
+            let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                   .getService(Components.interfaces.calICalDAVACLManager);
+            aclMgr.getCalendarEntry(this, opListener);
             return;
         }
 
@@ -2696,18 +2680,7 @@ if (!message) {
 
     isInvitation: function caldav_isInvitation(aItem) {
         // Inverse inc. ACL addition
-        let aclEntry = null;
-        let opListener = {
-            onGetResult: function(calendar, status, itemType, detail, count, items) {
-                ASSERT(false, "unexpected!");
-            },
-            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                aclEntry = opDetail;
-            }
-        };
-        this.aclMgr.getCalendarEntry(this, opListener);
-
-        if (!aclEntry || !aclEntry.hasAccessControl) {
+        if (!this.mACLEntry || !this.mACLEntry.hasAccessControl) {
             // No ACL support - fallback to the old mehtod
             let id = this.getProperty("organizerId");
             if (id) {
@@ -2737,7 +2710,7 @@ if (!message) {
         // - the organizer of the event is NOT within the owner's identities of this calendar
         // - if the one of the owner's identities of this calendar is in the attendees
         let ownerIdentities = {};
-        aclEntry.getOwnerIdentities({}, ownerIdentities);
+        this.mACLEntry.getOwnerIdentities({}, ownerIdentities);
         ownerIdentities = ownerIdentities.value;
         for (let i = 0; i < ownerIdentities.length; i++) {
             let identity = "mailto:" + ownerIdentities[i].email.toLowerCase();
@@ -2755,24 +2728,9 @@ if (!message) {
       let id = this.getProperty("organizerId");
       let attendee = (id ? aItem.getAttendeeById(id) : null);
 
-      if (!attendee) {
-          let aclEntry = null;
-          let opListener = {
-              onGetResult: function(calendar, status, itemType, detail, count, items) {
-                  ASSERT(false, "unexpected!");
-              },
-              onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
-                  aclEntry = opDetail;
-              }
-          };
-          this.aclMgr.getCalendarEntry(this, opListener);
-
-          if (!aclEntry) {
-              return null;
-          }
-
+      if (!attendee && this.mACLEntry) {
           let ownerIdentities = {};
-          aclEntry.getOwnerIdentities({}, ownerIdentities);
+          this.mACLEntry.getOwnerIdentities({}, ownerIdentities);
           ownerIdentities = ownerIdentities.value;
           if (ownerIdentities.length > 0) {
               let identity;
@@ -2799,7 +2757,21 @@ if (!message) {
         }
 
       // try to reread the ACLs
-        this.aclMgr.refresh(this.uri.spec);
+        this.mACLEntry = null;
+        let thisCalendar = this;
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                thisCalendar.mACLEntry = opDetail;
+            }
+        };
+
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.refresh(this.uri.spec);
+        aclMgr.getCalendarEntry(this, opListener);
     },
 
     reconcileAddedItems: function cCC_reconcileAddedItems(aTriggerRefresh) {
