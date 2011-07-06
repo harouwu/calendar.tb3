@@ -293,28 +293,29 @@ calDavCalendar.prototype = {
     adoptItemOrUseCache: function caldav_adoptItemOrUseCache(aItem, useCache, aListener){
         LOG("[calDavCalendar.js] adoptItemOrUseCache Called with useCache:: "+useCache+"\n");
         let this_ = this;
+        
         let opListener = {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status)) {
-                    if(aListener){
-                        aListener.onOperationComplete(this_, status, opType, id, detail);
-                    }
-                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                    if(useCache){ //Write into Cache when a failure occurs
-                        var listener = {
-                           onGetResult: function(calendar, status, itemType, detail, count, items) {
-                           },
-                           onOperationComplete: function(calendar, status, opType, id, detail){
-                           }
-                       };    
-                       this_.adoptOfflineItem(aItem,listener);
-                    }
+                if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
+                   
+                    var listener = {
+                        onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        },
+                        onOperationComplete: function(calendar, status, opType, id, detail){
+                            aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED, opType, id, detail);
+                        }
+                   };    
+                   this_.adoptOfflineItem(aItem,listener);
+                
+                } else {
+                    aListener.onOperationComplete(this_, status, opType, id, detail);
                 }
             }
         };
+        
         this_.adoptItem(aItem,opListener);    
     },
     
@@ -344,20 +345,19 @@ calDavCalendar.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status)) {
-                    if(aListener){
-                        aListener.onOperationComplete(this_, status, opType, id, detail);
-                    }
-                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                    if (useCache){
-                        var listener = {
-                            onGetResult: function(calendar, status, itemType, detail, count, items) {          
-                            },
-                            onOperationComplete: function(calendar, status, opType, id, detail){
-                            }
-                        };    
-                        this_.modifyOfflineItem(aNewItem, aOldItem,listener);
-                    }
+                if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
+                    
+                    var listener = {
+                        onGetResult: function(calendar, status, itemType, detail, count, items) {          
+                        },
+                        onOperationComplete: function(calendar, status, opType, id, detail){
+                            aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED, opType, id, detail);
+                        }
+                    };    
+                    this_.modifyOfflineItem(aNewItem, aOldItem,listener);
+                
+                } else {
+                    aListener.onOperationComplete(calendar, status, opType, id, detail);
                 }
             }
         };
@@ -390,20 +390,19 @@ calDavCalendar.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status)) {
-                    if(aListener){
+                if (status == Components.results.NS_ERROR_CONNECTION_REFUSED && useCache) {
+                    
+                var listener = {
+                    onGetResult: function(calendar, status, itemType, detail, count, items) {
+                    },
+                    onOperationComplete: function(calendar, status, opType, id, detail){
                         aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
                     }
-                } else if (Components.results.NS_ERROR_CONNECTION_REFUSED == status) {
-                    if(useCache){
-                        var listener = {
-                            onGetResult: function(calendar, status, itemType, detail, count, items) {
-                            },
-                            onOperationComplete: function(calendar, status, opType, id, detail){    
-                            }
-                        };    
-                        this_.deleteOfflineItem(aItem,listener);
-                    }
+                };    
+                this_.deleteOfflineItem(aItem,listener);
+                    
+                } else {
+                    aListener.onOperationComplete(this_, status, opType, aItem.id, aItem);
                 }
             }
         };
@@ -777,7 +776,6 @@ calDavCalendar.prototype = {
                 thisCalendar.disabled = true;
                 aListener.onOperationComplete(thisCalendar, Components.results.NS_ERROR_CONNECTION_REFUSED,
                                               Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
-                return;
             }else {
                 if (status > 999) {
                     status = "0x" + status.toString(16);
@@ -2820,11 +2818,14 @@ if (!message) {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                storage.resetItemOfflineFlag(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0) {
-                    this_.reconcileModifiedItems(aTriggerRefresh);
+                if(Components.isSuccessCode(status)){
+                    storage.resetItemOfflineFlag(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0) {
+                        this_.reconcileModifiedItems(aTriggerRefresh);
+                    }    
                 }
+                
             }
         };
 
@@ -2876,10 +2877,12 @@ if (!message) {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                storage.resetItemOfflineFlag(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0) {
-                    this_.reconcileDeletedItems(aTriggerRefresh);
+                if(Components.isSuccessCode(status)){
+                    storage.resetItemOfflineFlag(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0) {
+                        this_.reconcileDeletedItems(aTriggerRefresh);
+                    }    
                 }
             }
         };
@@ -2932,10 +2935,12 @@ if (!message) {
             onGetResult: function(calendar, status, itemType, detail, count, items) {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                this_.mOfflineStorage.deleteItem(detail, resetListener);
-                this.itemCount--;
-                if (this.itemCount == 0 && aTriggerRefresh) {
-                    this_.refresh();
+                if(Components.isSuccessCode(status)){
+                    this_.mOfflineStorage.deleteItem(detail, resetListener);
+                    this.itemCount--;
+                    if (this.itemCount == 0 && aTriggerRefresh) {
+                        this_.refresh();
+                    }    
                 }
             }
         };
