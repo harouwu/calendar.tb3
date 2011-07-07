@@ -520,8 +520,10 @@ calCachedCalendar.prototype = {
     },
     refresh: function() {
         if (this.mUncachedCalendar.canRefresh && !this.offline) {
+            this.reconcileAddedItems(false);
             return this.mUncachedCalendar.refresh(); // will trigger synchronize once the calendar is loaded
         } else {
+            this.reconcileAddedItems(false);//Maybe some offline items were created via 50x errors
             var this_ = this;
             return this.synchronize(
                 function(status) { // fire completing onLoad for this refresh call
@@ -562,6 +564,7 @@ calCachedCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (Components.isSuccessCode(status) && !this_.supportsChangeLog) {
+                    LOG("[calCachedCalendar] Underlying Calendar does not support ChangeLog\n");
                     this_.mCachedCalendar.addItem(detail, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);
@@ -664,7 +667,7 @@ calCachedCalendar.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status)) {
+                if (Components.isSuccessCode(status) && !this_.supportsChangeLog) {
                     this_.mCachedCalendar.deleteItem(item, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);
