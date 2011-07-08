@@ -72,6 +72,14 @@ interface calIOfflineStorage : calICalendar {
      * @param aListener   where to call back the results
      */
     void deleteOfflineItem(in calIItemBase aItem, in calIOperationListener aListener);
+
+    /**
+     * getItemOfflineFlag remove any offline flag from the item record.
+     *
+     * @param aItem       the item to reset
+     * @param aListener   where to call back the results
+     */
+    void getItemOfflineFlag(in calIItemBase aItem, in calIOperationListener aListener);
     
     /**
      * resetItemOfflineFlag remove any offline flag from the item record.
