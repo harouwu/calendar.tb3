@@ -667,7 +667,7 @@ calCachedCalendar.prototype = {
                 ASSERT(false, "unexpected!");
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
-                if (Components.isSuccessCode(status) && !this_.supportsChangeLog) {
+                if (Components.isSuccessCode(status)) {
                     this_.mCachedCalendar.deleteItem(item, listener);
                 } else if (listener) {
                     listener.onOperationComplete(this_, status, opType, id, detail);

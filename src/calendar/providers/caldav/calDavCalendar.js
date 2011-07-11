@@ -462,7 +462,7 @@ calDavCalendar.prototype = {
             } else if (status == 412) {
                 thisCalendar.promptOverwrite(CALDAV_MODIFY_ITEM, aNewItem,
                                              aListener, aOldItem);
-            } else if ((status >= 500 && status <= 510 ) || status == 0) {
+            } else if (status >= 500 && status <= 510 ) {
                 if(useCache){
                     LOG("[calDavCalendar.js] doModifyItem recd. status code of server unavailibity [50x], hence calling offline functions.\n");
                     thisCalendar.modifyOfflineItem(aNewItem, aOldItem, aListener);
@@ -495,8 +495,22 @@ calDavCalendar.prototype = {
     },
     
     modifyItemOrUseCache: function caldav_modifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener){
-        this.doModifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener, false);
-       
+        let this_ = this;
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                let offline_flag = detail;
+                if((offline_flag == "c" || offline_flag == "m") && useCache){ 
+                    LOG("[modifyItemOrUseCache] flag of id " + aOldItem.id + " is " + detail );
+                    this_.modifyOfflineItem(aNewItem, aOldItem, aListener);
+                } else {
+                    this_.doModifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener, false);
+                }
+            }
+        };
+        let storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
+        storage.getItemOfflineFlag(aOldItem, opListener);
     },
 
     modifyOfflineItem: function(newItem, oldItem, listener) {
@@ -580,10 +594,19 @@ calDavCalendar.prototype = {
                                                        thisCalendar);
                 httpchannel2.requestMethod = "HEAD";
                 cal.sendHttpRequest(cal.createStreamLoader(), httpchannel2, delListener2);
-            } else if ((status >= 500 && status <= 510 ) || status == 0) {
+            } else if (status >= 500 && status <= 510 ) {
                 if(useCache){
                     LOG("[calDavCalendar.js] doDeleteItem encountered that the calendar is unavailable, so its going offline for a while\n");
-                    thisCalendar.deleteOfflineItem(aItem, aListener);
+                    let opListener = {
+                        //We should not return a success code since the listeners can delete the physical item in case of success
+                        onGetResult: function(calendar, status, itemType, detail, count, items) {
+                        },
+                        onOperationComplete: function(calendar, status, opType, id, detail) {
+                             aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED,
+                                              Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
+                        }
+                    };
+                    thisCalendar.deleteOfflineItem(aItem, opListener);
                 } else {
                     aListener.onOperationComplete(thisCalendar, Components.results.NS_ERROR_CONNECTION_REFUSED,
                                               Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
@@ -607,10 +630,19 @@ calDavCalendar.prototype = {
                 if (status == 404) {
                     // someone else already deleted it
                     return;
-                } else if ((status >= 500 && status <= 510 ) || status == 0) {
+                } else if (status >= 500 && status <= 510 ) {
                     if(useCache){
-                        LOG("[calDavCalendar.js] doDeleteItem encountered that the calendar is unavailable, so its going offline for a while\n");
-                        thisCalendar.deleteOfflineItem(aItem, aListener);
+                       LOG("[calDavCalendar.js] doDeleteItem encountered that the calendar is unavailable, so its going offline for a while\n");
+                        let opListener = {
+                            //We should not return a success code since the listeners can delete the physical item in case of success
+                            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                            },
+                            onOperationComplete: function(calendar, status, opType, id, detail) {
+                                 aListener.onOperationComplete(calendar, Components.results.NS_ERROR_CONNECTION_REFUSED,
+                                                  Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
+                            }
+                        };
+                        thisCalendar.deleteOfflineItem(aItem, opListener);
                     } else {
                         aListener.onOperationComplete(thisCalendar, Components.results.NS_ERROR_CONNECTION_REFUSED,
                                                   Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
@@ -637,7 +669,9 @@ calDavCalendar.prototype = {
     },
     
     deleteItemOrUseCache: function caldav_deleteItemOrUseCache(aItem, useCache, aListener){
-        let opListener = { //We need a listener because the original doDeleteItemOrUseCache wud return null upon successful item deletion
+        let this_ = this;
+        
+        let deleteListener = { //We need a listener because the original doDeleteItemOrUseCache wud return null upon successful item deletion
             onGetResult: function(calendar, status, itemType, detail, count, items) {
                 ASSERT(false, "unexpected!");
             },
@@ -646,7 +680,23 @@ calDavCalendar.prototype = {
             }
         };
         
-        this.doDeleteItemOrUseCache(aItem, useCache, opListener, false);    
+        // If the item has an offline_flag associated with itself then it is better
+        // to do offline deletion since the items will not be present in the
+        // mItemInfoCache. The items will be reconciled whenever the server becomes available
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail) {
+                let offline_flag = detail;
+                if((offline_flag == "c" || offline_flag == "m") && useCache){
+                    this_.deleteOfflineItem(aItem, deleteListener);
+                } else {
+                    this_.doDeleteItemOrUseCache(aItem, useCache, deleteListener, false);
+                }
+            }
+        };
+        let storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
+        storage.getItemOfflineFlag(aItem, opListener);  
     },
 
     deleteOfflineItem: function(item, listener) {
