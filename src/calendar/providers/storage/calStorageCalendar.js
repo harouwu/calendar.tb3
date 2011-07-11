@@ -764,8 +764,7 @@ calStorageCalendar.prototype = {
         if (wantEvents) {
             var sp;             // stmt params
             var resultItems = [];
-            let resultFlags = [];
-
+            
             // first get non-recurring events that happen to fall within the range
             //
             this.prepareStatement(this.mSelectNonRecurringEventsByRange);
@@ -782,7 +781,6 @@ calStorageCalendar.prototype = {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
                     let row = this.mSelectNonRecurringEventsByRange.row;
                     resultItems.push(this.getEventFromRow(row, {}));
-                    resultFlags[row.id] = row.offline_journal;
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring events by range!\n" + e +
@@ -802,7 +800,10 @@ calStorageCalendar.prototype = {
             // process the recurring events from the cache
             for each (var evitem in this.mRecEventCache) {
                 let offline_journal_flag = this.mRecEventCacheOfflineFlags[evitem.id];
-                if(offline_journal_flag == sp.offline_journal){
+                //No need to return deleted unless asked i.e. sp.offline_journal == 'd'
+                //Return created and modified records if sp.offline_journal is null
+                if((sp.offline_journal == null && ( offline_journal_flag == 'm' || offline_journal_flag == 'c' ))
+                   || (sp.offline_journal != null && (offline_journal_flag == sp.offline_journal))) {
                     //Need to check for recurring event's offline flag
                     //coz item gets returned by default
                     count += handleResultItem(evitem, Components.interfaces.calIEvent);
@@ -817,8 +818,7 @@ calStorageCalendar.prototype = {
         if (wantTodos) {
             var sp;             // stmt params
             var resultItems = [];
-            var resultFlags = [];
-
+            
             // first get non-recurring todos that happen to fall within the range
             this.prepareStatement(this.mSelectNonRecurringTodosByRange);
             sp = this.mSelectNonRecurringTodosByRange.params;
@@ -835,7 +835,6 @@ calStorageCalendar.prototype = {
                 while (this.mSelectNonRecurringTodosByRange.step()) {
                     let row = this.mSelectNonRecurringTodosByRange.row;
                     resultItems.push(this.getTodoFromRow(row, {}));
-                    resultFlags[row.id] = row.offline_journal;
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring todos by range!\n" + e +
@@ -859,7 +858,8 @@ calStorageCalendar.prototype = {
             // process the recurring todos from the cache
             for each (var todoitem in this.mRecTodoCache) {
                 let offline_journal_flag = this.mRecTodoCacheOfflineFlags[todoitem.id];
-                if(offline_journal_flag == sp.offline_journal){
+                if((sp.offline_journal == null && ( offline_journal_flag == 'm' || offline_journal_flag == 'c' ))
+                   || (sp.offline_journal != null && (offline_journal_flag == sp.offline_journal))) {
                     //Need to check for recurring event's offline flag
                     //coz item gets returned by default
                     count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
@@ -1481,8 +1481,7 @@ calStorageCalendar.prototype = {
                 var row = this.mSelectEventsWithRecurrence.row;
                 var item = this.getEventFromRow(row, {});
                 this.mRecEventCache[item.id] = item;
-                
-                this.mRecEventCacheOfflineFlags[item.id] = row.offline_journal;
+                this.mRecEventCacheOfflineFlags[item.id] = row.offline_journal; //Build the offline_flag database for recurring events
             }
         } catch (e) {
             cal.ERROR("Error selecting events with recurrence!\n" + e +
