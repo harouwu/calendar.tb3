@@ -438,79 +438,90 @@ calStorageCalendar.prototype = {
 
     // void modifyItem( in calIItemBase aNewItem, in calIItemBase aOldItem, in calIOperationListener aListener );
     modifyItem: function cSC_modifyItem(aNewItem, aOldItem, aListener) {
-        if (this.readOnly) {
-            this.notifyOperationComplete(aListener,
-                                         Components.interfaces.calIErrors.CAL_IS_READONLY,
-                                         Components.interfaces.calIOperationListener.MODIFY,
-                                         null,
-                                         "Calendar is readonly");
-            return null;
-        }
-        if (!aNewItem) {
-            throw Components.results.NS_ERROR_INVALID_ARG;
-        }
-
-        var this_ = this;
-        function reportError(errStr, errId) {
-            this_.notifyOperationComplete(aListener,
-                                          errId ? errId : Components.results.NS_ERROR_FAILURE,
-                                          Components.interfaces.calIOperationListener.MODIFY,
-                                          aNewItem.id,
-                                          errStr);
-            return null;
-        }
-
-        if (aNewItem.id == null) {
-            // this is definitely an error
-            return reportError("ID for modifyItem item is null");
-        }
-        var oldOfflineFlag = this.getOfflineJournalFlag(aOldItem); //A hack coz modify would delete all the row info
-        // Ensure that we're looking at the base item if we were given an
-        // occurrence.  Later we can optimize this.
-        var modifiedItem = aNewItem.parentItem.clone();
-        if (aNewItem.parentItem != aNewItem) {
-            modifiedItem.recurrenceInfo.modifyException(aNewItem, false);
-        }
-
-        if (this.relaxedMode) {
-            if (!aOldItem) {
-                aOldItem = this.getItemById(aNewItem.id) || aNewItem;
+        let oldOfflineFlag = null;
+        let this_ = this;
+        
+        let getOfflineJournalFlagListener = {
+            onGetResult: function (calendar, status, opType, id, detail){
+            },
+            onOperationComplete: function (this_, status, opType, id, detail) {
+                oldOfflineFlag = detail;
+                if (this_.readOnly) {
+                    this_.notifyOperationComplete(aListener,
+                                                 Components.interfaces.calIErrors.CAL_IS_READONLY,
+                                                 Components.interfaces.calIOperationListener.MODIFY,
+                                                 null,
+                                                 "Calendar is readonly");
+                    return null;
+                }
+                if (!aNewItem) {
+                    throw Components.results.NS_ERROR_INVALID_ARG;
+                }
+        
+                function reportError(errStr, errId) {
+                    this_.notifyOperationComplete(aListener,
+                                                  errId ? errId : Components.results.NS_ERROR_FAILURE,
+                                                  Components.interfaces.calIOperationListener.MODIFY,
+                                                  aNewItem.id,
+                                                  errStr);
+                    return null;
+                }
+        
+                if (aNewItem.id == null) {
+                    // this is definitely an error
+                    return reportError("ID for modifyItem item is null");
+                }
+                
+                // Ensure that we're looking at the base item if we were given an
+                // occurrence.  Later we can optimize this.
+                let modifiedItem = aNewItem.parentItem.clone();
+                if (aNewItem.parentItem != aNewItem) {
+                    modifiedItem.recurrenceInfo.modifyException(aNewItem, false);
+                }
+        
+                if (this_.relaxedMode) {
+                    if (!aOldItem) {
+                        aOldItem = this_.getItemById(aNewItem.id) || aNewItem;
+                    }
+                    aOldItem = aOldItem.parentItem;
+                } else {
+                    var storedOldItem = (aOldItem ? this_.getItemById(aOldItem.id) : null);
+                    if (!aOldItem || !storedOldItem) {
+                        // no old item found?  should be using addItem, then.
+                        return reportError("ID does not already exist for modifyItem");
+                    }
+                    aOldItem = aOldItem.parentItem;
+        
+                    if (aOldItem.generation != storedOldItem.generation) {
+                        return reportError("generation too old for for modifyItem");
+                    }
+        
+                    // xxx todo: this only modified master item's generation properties
+                    //           I start asking myself why we need a separate X-MOZ-GENERATION.
+                    //           Just for the sake of checking inconsistencies of modifyItem calls?
+                    if (aOldItem.generation == modifiedItem.generation) { // has been cloned and modified
+                        // Only take care of incrementing the generation if relaxed mode is
+                        // off. Users of relaxed mode need to take care of this themselves.
+                        modifiedItem.generation += 1;
+                    }
+                }
+        
+                modifiedItem.makeImmutable();
+                this_.flushItem (modifiedItem, aOldItem);
+                this_.setOfflineJournalFlag(aNewItem, oldOfflineFlag);
+                
+                this_.notifyOperationComplete(aListener,
+                                             Components.results.NS_OK,
+                                             Components.interfaces.calIOperationListener.MODIFY,
+                                             modifiedItem.id,
+                                             modifiedItem);
+        
+                // notify observers
+                this_.observers.notify("onModifyItem", [modifiedItem, aOldItem]);
+                return null;
             }
-            aOldItem = aOldItem.parentItem;
-        } else {
-            var storedOldItem = (aOldItem ? this.getItemById(aOldItem.id) : null);
-            if (!aOldItem || !storedOldItem) {
-                // no old item found?  should be using addItem, then.
-                return reportError("ID does not already exist for modifyItem");
-            }
-            aOldItem = aOldItem.parentItem;
-
-            if (aOldItem.generation != storedOldItem.generation) {
-                return reportError("generation too old for for modifyItem");
-            }
-
-            // xxx todo: this only modified master item's generation properties
-            //           I start asking myself why we need a separate X-MOZ-GENERATION.
-            //           Just for the sake of checking inconsistencies of modifyItem calls?
-            if (aOldItem.generation == modifiedItem.generation) { // has been cloned and modified
-                // Only take care of incrementing the generation if relaxed mode is
-                // off. Users of relaxed mode need to take care of this themselves.
-                modifiedItem.generation += 1;
-            }
-        }
-
-        modifiedItem.makeImmutable();
-        this.flushItem (modifiedItem, aOldItem);
-        this.setOfflineJournalFlag(aNewItem,oldOfflineFlag);
-        this.notifyOperationComplete(aListener,
-                                     Components.results.NS_OK,
-                                     Components.interfaces.calIOperationListener.MODIFY,
-                                     modifiedItem.id,
-                                     modifiedItem);
-
-        // notify observers
-        this.observers.notify("onModifyItem", [modifiedItem, aOldItem]);
-        return null;
+        };
+        this_.getItemOfflineFlag(aOldItem, getOfflineJournalFlagListener); //A hack coz modify would delete all the row info
     },
 
     // void deleteItem( in string id, in calIOperationListener aListener );
@@ -651,6 +662,13 @@ calStorageCalendar.prototype = {
                                          null);
             return;
         }
+        
+        // A HACK because recurring offline events/todos dont have offline_journal information
+        // Hence we need to update the mRecEventCacheOfflineFlags and  mRecTodoCacheOfflineFlags hash-tables
+        // It can be an expensive operation but should only be used in offline modes
+        if(wantOfflineCreatedItems | wantOfflineDeletedItems | wantOfflineModifiedItems){
+            this.mRecItemCacheInited = false;
+        }
 
         this.assureRecurringItemCaches();
 
@@ -746,6 +764,7 @@ calStorageCalendar.prototype = {
         if (wantEvents) {
             var sp;             // stmt params
             var resultItems = [];
+            let resultFlags = [];
 
             // first get non-recurring events that happen to fall within the range
             //
@@ -763,6 +782,7 @@ calStorageCalendar.prototype = {
                 while (this.mSelectNonRecurringEventsByRange.step()) {
                     let row = this.mSelectNonRecurringEventsByRange.row;
                     resultItems.push(this.getEventFromRow(row, {}));
+                    resultFlags[row.id] = row.offline_journal;
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring events by range!\n" + e +
@@ -781,7 +801,7 @@ calStorageCalendar.prototype = {
 
             // process the recurring events from the cache
             for each (var evitem in this.mRecEventCache) {
-                let offline_journal_flag = self.getOfflineJournalFlag(evitem);
+                let offline_journal_flag = this.mRecEventCacheOfflineFlags[evitem.id];
                 if(offline_journal_flag == sp.offline_journal){
                     //Need to check for recurring event's offline flag
                     //coz item gets returned by default
@@ -797,6 +817,7 @@ calStorageCalendar.prototype = {
         if (wantTodos) {
             var sp;             // stmt params
             var resultItems = [];
+            var resultFlags = [];
 
             // first get non-recurring todos that happen to fall within the range
             this.prepareStatement(this.mSelectNonRecurringTodosByRange);
@@ -814,6 +835,7 @@ calStorageCalendar.prototype = {
                 while (this.mSelectNonRecurringTodosByRange.step()) {
                     let row = this.mSelectNonRecurringTodosByRange.row;
                     resultItems.push(this.getTodoFromRow(row, {}));
+                    resultFlags[row.id] = row.offline_journal;
                 }
             } catch (e) {
                 cal.ERROR("Error selecting non recurring todos by range!\n" + e +
@@ -836,7 +858,7 @@ calStorageCalendar.prototype = {
 
             // process the recurring todos from the cache
             for each (var todoitem in this.mRecTodoCache) {
-                let offline_journal_flag = self.getOfflineJournalFlag(todoitem);
+                let offline_journal_flag = this.mRecTodoCacheOfflineFlags[todoitem.id];
                 if(offline_journal_flag == sp.offline_journal){
                     //Need to check for recurring event's offline flag
                     //coz item gets returned by default
@@ -862,51 +884,51 @@ calStorageCalendar.prototype = {
         //dump ("++++ getItems took: " + (profEndTime - profStartTime) + " ms\n");
     },
 
-    getOfflineJournalFlag: function cSC_getOfflineJournalFlag(aItem){
-        if(!aItem) return null;
-        var aID = aItem.id;
+    getItemOfflineFlag: function cSC_getOfflineJournalFlag(aItem, aListener){
         let flag = null;
-
-        if(isEvent(aItem)){
-            this.prepareStatement(this.mSelectEvent);
-            this.mSelectEvent.params.id = aID;
-            try {
-                    if (this.mSelectEvent.step()) {
-                    flag = this.mSelectEvent.row.offline_journal;
+        if(!aItem){
+            //It is possible that aItem can be null, flag provided should be null in this case
+            aListener.onOperationComplete(this, Components.results.NS_OK,
+                                               Components.interfaces.calIOperationListener.GET, null, flag);
+        } else {
+            let aID = aItem.id;
+            let this_ = this;
+            let listener = {
+                handleResult: function(aResultSet) {
+                        let row = aResultSet.getNextRow();
+                        flag = row.getResultByName("offline_journal");
+                },
+                handleError: function(aError){
+                    LOG("[getItemOfflineFlag] Error occured " + aError);
+                    aListener.onOperationComplete(this_, Components.results.NS_ERROR_FAILURE,
+                                                   Components.interfaces.calIOperationListener.GET, aItem.id, aItem);
+                },
+                handleCompletion: function(aReason){
+                    aListener.onOperationComplete(this_, Components.results.NS_OK,
+                                                   Components.interfaces.calIOperationListener.GET, aItem.id, flag);
                 }
-            } catch (e) {
-                cal.ERROR("Error selecting item by id " + aID + "!\n" + e +
-                          "\nDB Error: " + this.mDB.lastErrorString);
-            } finally {
-                this.mSelectEvent.reset();
-            }
-
-        } else if(isToDo(aItem)){
-            this.prepareStatement(this.mSelectTodo);
-            this.mSelectTodo.params.id = aID;
-            try {
-                if (this.mSelectTodo.step()) {
-                    flag = this.mSelectTodo.row.offline_journal;
-                }
-            } catch (e) {
-                cal.ERROR("Error selecting item by id " + aID + "!\n" + e +
-                          "\nDB Error: " + this.mDB.lastErrorString);
-            } finally {
-                this.mSelectTodo.reset();
+            };
+            if(isEvent(aItem)){
+                this.prepareStatement(this.mSelectEvent);
+                this.mSelectEvent.params.id = aID;
+                this.mSelectEvent.statement.executeAsync(listener);
+            } else if(isToDo(aItem)){
+                this.prepareStatement(this.mSelectTodo);
+                this.mSelectTodo.params.id = aID;
+                this.mSelectTodo.statement.executeAsync(listener);
             }
         }
-
-        return flag;
     },
 
     setOfflineJournalFlag: function cSC_setOfflineJournalFlag(aItem, flag){
         let aID = aItem.id;
-        if(isEvent(aItem)){
+        if(isEvent(aItem) && flag != null){
             this.prepareStatement(this.mEditEventOfflineFlag);
             this.mEditEventOfflineFlag.params.id = aID;
             this.mEditEventOfflineFlag.params.offline_journal = flag;
+            LOG("FLAG " +  this.mEditEventOfflineFlag.params.offline_journal );
             this.mEditEventOfflineFlag.execute();
-        } else if(isToDo(aItem)){
+        } else if(isToDo(aItem) && flag != null){
             this.prepareStatement(this.mEditTodoOfflineFlag);
             this.mEditTodoOfflineFlag.params.id = aID;
             this.mEditTodoOfflineFlag.params.offline_journal = flag;
@@ -927,45 +949,64 @@ calStorageCalendar.prototype = {
                                      aItem);
     },
     modifyOfflineItem: function(aItem, aListener) {
-        var oldOfflineJournalFlag = this.getOfflineJournalFlag(aItem);
-        var newOfflineJournalFlag = "m";
-        if (oldOfflineJournalFlag == "c" || oldOfflineJournalFlag=="d") {
-            //Do nothing since a flag of "created" or "deleted" exists
-        }
-        else {
-            this.setOfflineJournalFlag(aItem,newOfflineJournalFlag);
-        }
-
-        this.notifyOperationComplete(aListener,
+        let oldOfflineJournalFlag = null;
+        let this_ = this;
+        let opListener = {
+            onGetResult: function (calendar, status, itemType, detail, count, items){
+                
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail){
+                oldOfflineJournalFlag = detail;
+                let newOfflineJournalFlag = "m";
+                if (oldOfflineJournalFlag == "c" || oldOfflineJournalFlag=="d") {
+                    //Do nothing since a flag of "created" or "deleted" exists
+                }
+                else {
+                    LOG("[ModifyOfflineItem] of id " + aItem.id +" oldflag " + oldOfflineJournalFlag);
+                    this_.setOfflineJournalFlag(aItem, newOfflineJournalFlag);
+                }
+                this_.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
                                      Components.interfaces.calIOperationListener.MODIFY,
                                      aItem.id,
                                      aItem);
+            }
+        };
+        this.getItemOfflineFlag(aItem, opListener);
     },
     deleteOfflineItem: function(aItem, aListener) {
-        var oldOfflineJournalFlag = this.getOfflineJournalFlag(aItem);
-        var newOfflineJournalFlag = "d";
-        if (oldOfflineJournalFlag) {
-            //delete item if flag is c
-            if (oldOfflineJournalFlag == "c") {
-                this.deleteItemById(aItem.id);
+        let oldOfflineJournalFlag = null;
+        let this_ = this;
+        let opListener = {
+            onGetResult: function (calendar, status, itemType, detail, count, items){
+                
+            },
+            onOperationComplete: function(calendar, status, opType, id, detail){
+                oldOfflineJournalFlag = detail;
+                var newOfflineJournalFlag = "d";
+                if (oldOfflineJournalFlag) {
+                    //delete item if flag is c
+                    if (oldOfflineJournalFlag == "c") {
+                        this_.deleteItemById(aItem.id);
+                    }
+                    else if (oldOfflineJournalFlag == "m") {
+                        this_.setOfflineJournalFlag(aItem,"d");
+                    }
+                }
+                else {
+                    this_.setOfflineJournalFlag(aItem,"d");
+                }
+        
+                this_.notifyOperationComplete(aListener,
+                                             Components.results.NS_OK,
+                                             Components.interfaces.calIOperationListener.DELETE,
+                                             aItem.id,
+                                             aItem);
+                // notify observers
+                this_.observers.notify("onDeleteItem", [aItem]); 
             }
-            else if (oldOfflineJournalFlag == "m") {
-                this.setOfflineJournalFlag(aItem,"d");
-            }
-        }
-        else {
-            this.setOfflineJournalFlag(aItem,"d");
-        }
-
-        this.notifyOperationComplete(aListener,
-                                     Components.results.NS_OK,
-                                     Components.interfaces.calIOperationListener.DELETE,
-                                     aItem.id,
-                                     aItem);
-
-        // notify observers
-        this.observers.notify("onDeleteItem", [aItem]);
+        };
+        this.getItemOfflineFlag(aItem, opListener);
     },
     resetItemOfflineFlag: function(aItem, aListener){
         this.setOfflineJournalFlag(aItem,null);
@@ -1422,8 +1463,11 @@ calStorageCalendar.prototype = {
             }
         }
     },
-
+    
+    mRecEventCacheOfflineFlags: {},
+    mRecTodoCacheOfflineFlags : {},
     assureRecurringItemCaches: function cSC_assureRecurringItemCaches() {
+        
         if (this.mRecItemCacheInited) {
             return;
         }
@@ -1437,6 +1481,8 @@ calStorageCalendar.prototype = {
                 var row = this.mSelectEventsWithRecurrence.row;
                 var item = this.getEventFromRow(row, {});
                 this.mRecEventCache[item.id] = item;
+                
+                this.mRecEventCacheOfflineFlags[item.id] = row.offline_journal;
             }
         } catch (e) {
             cal.ERROR("Error selecting events with recurrence!\n" + e +
@@ -1452,6 +1498,7 @@ calStorageCalendar.prototype = {
                 var row = this.mSelectTodosWithRecurrence.row;
                 var item = this.getTodoFromRow(row, {});
                 this.mRecTodoCache[item.id] = item;
+                this.mRecTodoCacheOfflineFlags[item.id] = row.offline_journal;
             }
         } catch (e) {
             cal.ERROR("Error selecting todos with recurrence!\n" + e +
