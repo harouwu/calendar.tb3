@@ -135,12 +135,6 @@ function calCachedCalendar(uncachedCalendar) {
                                            updateTimer * 60 * 1000,
                                            Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
     }
-
-    /* start reconciling potential offline items if we start in online mode
-     */
-    if (!this.offline) {
-        this.reconcileAddedItems(false);
-    }
 }
 calCachedCalendar.prototype = {
     QueryInterface: function cCC_QueryInterface(aIID) {
@@ -321,11 +315,11 @@ calCachedCalendar.prototype = {
             // Going offline: (XXX get items before going offline?) => we may ask the user to stay online a bit longer
         } else {
             // Going online (start replaying changes to the remote calendar)
-            this.reconcileAddedItems(true);
+            this.refresh();
         }
     },
 
-    reconcileAddedItems: function cCC_reconcileAddedItems(aTriggerRefresh) {
+    reconcileAddedItems: function cCC_reconcileAddedItems(callbackFunc) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -346,8 +340,8 @@ calCachedCalendar.prototype = {
                     storage.resetItemOfflineFlag(detail, resetListener);
                     this.itemCount--;
                     if (this.itemCount == 0) {
-                        this_.reconcileModifiedItems(aTriggerRefresh);
-                    }    
+                        this_.reconcileModifiedItems(callbackFunc);
+                    }
                 }
             }
         };
@@ -363,6 +357,7 @@ calCachedCalendar.prototype = {
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (this_.offline) {
                     LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
+                    callbackFunc();
                 }
                 else {
                     LOG("[calCachedCalendar] adding "  + this.items.length + " items");
@@ -373,7 +368,7 @@ calCachedCalendar.prototype = {
                         }
                     }
                     else {
-                        this_.reconcileModifiedItems(aTriggerRefresh);
+                        this_.reconcileModifiedItems(callbackFunc);
                     }
                 }
                 delete this.items;
@@ -383,7 +378,7 @@ calCachedCalendar.prototype = {
         this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_ALL_ITEMS | calICalendar.ITEM_FILTER_OFFLINE_CREATED, //calICalendar.ITEM_FILTER_TYPE_ALL does not include calICalendar.ITEM_FILTER_COMPLETED_ALL,
                                       0, null, null, getListener);
     },
-    reconcileModifiedItems: function cCC_reconcileModifiedItems(aTriggerRefresh) {
+    reconcileModifiedItems: function cCC_reconcileModifiedItems(callbackFunc) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -404,10 +399,10 @@ calCachedCalendar.prototype = {
                     storage.resetItemOfflineFlag(detail, resetListener);
                     this.itemCount--;
                     if (this.itemCount == 0) {
-                        this_.reconcileDeletedItems(aTriggerRefresh);
-                    }    
+                        this_.reconcileDeletedItems(callbackFunc);
+                    }
                 }
-                
+
             }
         };
 
@@ -422,6 +417,7 @@ calCachedCalendar.prototype = {
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (this_.offline) {
                     LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
+                    callbackFunc();
                 }
                 else {
                     LOG("[calCachedCalendar] modifying "  + this.items.length + " items");
@@ -432,7 +428,7 @@ calCachedCalendar.prototype = {
                         }
                     }
                     else {
-                        this_.reconcileDeletedItems(aTriggerRefresh);
+                        this_.reconcileDeletedItems(callbackFunc);
                     }
                 }
                 delete this.items;
@@ -442,7 +438,7 @@ calCachedCalendar.prototype = {
         this.mCachedCalendar.getItems(calICalendar.ITEM_FILTER_OFFLINE_MODIFIED | calICalendar.ITEM_FILTER_ALL_ITEMS ,//calICalendar.ITEM_FILTER_TYPE_ALL,
                                       0, null, null, getListener);
     },
-    reconcileDeletedItems: function cCC_reconcileDeletedItems(aTriggerRefresh) {
+    reconcileDeletedItems: function cCC_reconcileDeletedItems(callbackFunc) {
         let this_ = this;
         let storage = this.mCachedCalendar.QueryInterface(Components.interfaces.calIOfflineStorage);
 
@@ -462,9 +458,9 @@ calCachedCalendar.prototype = {
                 if(Components.isSuccessCode(status)){
                     this_.mCachedCalendar.deleteItem(detail, resetListener);
                     this.itemCount--;
-                    if (this.itemCount == 0 && aTriggerRefresh) {
-                        this_.refresh();
-                    }   
+                    if (this.itemCount == 0 && callbackFunc) {
+                        callbackFunc();
+                    }
                 }
             }
         };
@@ -480,6 +476,7 @@ calCachedCalendar.prototype = {
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 if (this_.offline) {
                     LOG("[calCachedCalendar] back to offline mode, reconciliation aborted");
+                    callbackFunc();
                 }
                 else {
                     LOG("[calCachedCalendar] deleting "  + this.items.length + " items");
@@ -489,8 +486,8 @@ calCachedCalendar.prototype = {
                             this_.mUncachedCalendar.deleteItemOrUseCache(aItem, false, deleteListener);
                         }
                     }
-                    else if (aTriggerRefresh) {
-                        this_.refresh();
+                    else if (callbackFunc) {
+                        callbackFunc();
                     }
                 }
                 delete this.items;
@@ -519,11 +516,19 @@ calCachedCalendar.prototype = {
         return true;
     },
     refresh: function() {
+        if (this.offline) {
+            this.downwardRefresh();
+        }
+        else {
+            /* we first ensure that any remaining offline items are reconciled with the calendar server */
+            let this_ = this;
+            this.reconcileAddedItems(function() { this_.downstreamRefresh(); });
+        }
+    },
+    downstreamRefresh: function() {
         if (this.mUncachedCalendar.canRefresh && !this.offline) {
-            this.reconcileAddedItems(false);
             return this.mUncachedCalendar.refresh(); // will trigger synchronize once the calendar is loaded
         } else {
-            this.reconcileAddedItems(false);//Maybe some offline items were created via 50x errors
             var this_ = this;
             return this.synchronize(
                 function(status) { // fire completing onLoad for this refresh call
