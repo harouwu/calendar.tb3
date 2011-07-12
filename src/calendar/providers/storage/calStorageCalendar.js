@@ -928,7 +928,6 @@ calStorageCalendar.prototype = {
             this.prepareStatement(this.mEditEventOfflineFlag);
             this.mEditEventOfflineFlag.params.id = aID;
             this.mEditEventOfflineFlag.params.offline_journal = flag;
-            LOG("FLAG " +  this.mEditEventOfflineFlag.params.offline_journal );
             this.mEditEventOfflineFlag.execute();
         } else if(isToDo(aItem) && flag != null){
             this.prepareStatement(this.mEditTodoOfflineFlag);
@@ -964,7 +963,6 @@ calStorageCalendar.prototype = {
                     //Do nothing since a flag of "created" or "deleted" exists
                 }
                 else {
-                    LOG("[ModifyOfflineItem] of id " + aItem.id +" oldflag " + oldOfflineJournalFlag);
                     this_.setOfflineJournalFlag(aItem, newOfflineJournalFlag);
                 }
                 this_.notifyOperationComplete(aListener,
