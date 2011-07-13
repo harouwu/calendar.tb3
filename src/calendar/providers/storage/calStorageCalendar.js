@@ -441,7 +441,7 @@ calStorageCalendar.prototype = {
     modifyItem: function cSC_modifyItem(aNewItem, aOldItem, aListener) {
         let oldOfflineFlag = null;
         let this_ = this;
-        
+
         let getOfflineJournalFlagListener = {
             onGetResult: function (calendar, status, opType, id, detail){
             },
@@ -454,9 +454,8 @@ calStorageCalendar.prototype = {
 
     doModifyItem: function cSC_doModifyItem(aNewItem, aOldItem, aListener, offlineFlag) {
         oldOfflineFlag = offlineFlag;
-        let this_ = this;
-        if (this_.readOnly) {
-            this_.notifyOperationComplete(aListener,
+        if (this.readOnly) {
+            this.notifyOperationComplete(aListener,
                                          Components.interfaces.calIErrors.CAL_IS_READONLY,
                                          Components.interfaces.calIOperationListener.MODIFY,
                                          null,
@@ -467,6 +466,7 @@ calStorageCalendar.prototype = {
             throw Components.results.NS_ERROR_INVALID_ARG;
         }
 
+        let this_ = this;
         function reportError(errStr, errId) {
             this_.notifyOperationComplete(aListener,
                                           errId ? errId : Components.results.NS_ERROR_FAILURE,
@@ -480,7 +480,7 @@ calStorageCalendar.prototype = {
             // this is definitely an error
             return reportError("ID for modifyItem item is null");
         }
-        
+
         // Ensure that we're looking at the base item if we were given an
         // occurrence.  Later we can optimize this.
         let modifiedItem = aNewItem.parentItem.clone();
@@ -488,13 +488,13 @@ calStorageCalendar.prototype = {
             modifiedItem.recurrenceInfo.modifyException(aNewItem, false);
         }
 
-        if (this_.relaxedMode) {
+        if (this.relaxedMode) {
             if (!aOldItem) {
-                aOldItem = this_.getItemById(aNewItem.id) || aNewItem;
+                aOldItem = this.getItemById(aNewItem.id) || aNewItem;
             }
             aOldItem = aOldItem.parentItem;
         } else {
-            var storedOldItem = (aOldItem ? this_.getItemById(aOldItem.id) : null);
+            var storedOldItem = (aOldItem ? this.getItemById(aOldItem.id) : null);
             if (!aOldItem || !storedOldItem) {
                 // no old item found?  should be using addItem, then.
                 return reportError("ID does not already exist for modifyItem");
@@ -516,20 +516,20 @@ calStorageCalendar.prototype = {
         }
 
         modifiedItem.makeImmutable();
-        this_.flushItem (modifiedItem, aOldItem);
-        this_.setOfflineJournalFlag(aNewItem, oldOfflineFlag);
-        
-        this_.notifyOperationComplete(aListener,
+        this.flushItem (modifiedItem, aOldItem);
+        this.setOfflineJournalFlag(aNewItem, oldOfflineFlag);
+
+        this.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
                                      Components.interfaces.calIOperationListener.MODIFY,
                                      modifiedItem.id,
                                      modifiedItem);
 
         // notify observers
-        this_.observers.notify("onModifyItem", [modifiedItem, aOldItem]);
+        this.observers.notify("onModifyItem", [modifiedItem, aOldItem]);
         return null;
     },
-    
+
     // void deleteItem( in string id, in calIOperationListener aListener );
     deleteItem: function cSC_deleteItem(aItem, aListener) {
         if (this.readOnly) {
@@ -623,7 +623,6 @@ calStorageCalendar.prototype = {
     getItems_: function cSC_getItems_(aItemFilter, aCount,
                                       aRangeStart, aRangeEnd, aListener)
     {
-      //  dump("[GetItems Init Call] Flag is : " + aItemFilter + "****\n");
         //var profStartTime = Date.now();
         if (!aListener)
             return;
@@ -668,7 +667,7 @@ calStorageCalendar.prototype = {
                                          null);
             return;
         }
-        
+
         // A HACK because recurring offline events/todos objects dont have offline_journal information
         // Hence we need to update the mRecEventCacheOfflineFlags and  mRecTodoCacheOfflineFlags hash-tables
         // It can be an expensive operation but is only used in Online Reconciliation mode
@@ -770,7 +769,7 @@ calStorageCalendar.prototype = {
         if (wantEvents) {
             var sp;             // stmt params
             var resultItems = [];
-            
+
             // first get non-recurring events that happen to fall within the range
             //
             this.prepareStatement(this.mSelectNonRecurringEventsByRange);
@@ -808,8 +807,8 @@ calStorageCalendar.prototype = {
                 let offline_journal_flag = this.mRecEventCacheOfflineFlags[evitem.id];
                 //No need to return flagged unless asked i.e. sp.offline_journal == offline_journal_flag
                 //Return created and modified offline records if sp.offline_journal is null alongwith events that have no flag
-                if ((sp.offline_journal == null && ( offline_journal_flag == 'm' || offline_journal_flag == 'c' || offline_journal_flag == null))
-                   || (sp.offline_journal != null && (offline_journal_flag == sp.offline_journal))) {
+                if ((sp.offline_journal == null && offline_journal_flag != 'd')
+                    || (sp.offline_journal != null && offline_journal_flag == sp.offline_journal)) {
                     count += handleResultItem(evitem, Components.interfaces.calIEvent);
                     if (checkCount()) {
                         return;
@@ -822,7 +821,7 @@ calStorageCalendar.prototype = {
         if (wantTodos) {
             var sp;             // stmt params
             var resultItems = [];
-            
+
             // first get non-recurring todos that happen to fall within the range
             this.prepareStatement(this.mSelectNonRecurringTodosByRange);
             sp = this.mSelectNonRecurringTodosByRange.params;
@@ -867,7 +866,7 @@ calStorageCalendar.prototype = {
                     count += handleResultItem(todoitem, Components.interfaces.calITodo, checkCompleted);
                     if (checkCount()) {
                         return;
-                    }        
+                    }
                 }
             }
         }
@@ -954,7 +953,7 @@ calStorageCalendar.prototype = {
         let this_ = this;
         let opListener = {
             onGetResult: function (calendar, status, itemType, detail, count, items){
-                
+
             },
             onOperationComplete: function(calendar, status, opType, id, detail){
                 oldOfflineJournalFlag = detail;
@@ -979,7 +978,7 @@ calStorageCalendar.prototype = {
         let this_ = this;
         let opListener = {
             onGetResult: function (calendar, status, itemType, detail, count, items){
-                
+
             },
             onOperationComplete: function(calendar, status, opType, id, detail){
                 oldOfflineJournalFlag = detail;
@@ -996,14 +995,14 @@ calStorageCalendar.prototype = {
                 else {
                     this_.setOfflineJournalFlag(aItem,"d");
                 }
-        
+
                 this_.notifyOperationComplete(aListener,
                                              Components.results.NS_OK,
                                              Components.interfaces.calIOperationListener.DELETE,
                                              aItem.id,
                                              aItem);
                 // notify observers
-                this_.observers.notify("onDeleteItem", [aItem]); 
+                this_.observers.notify("onDeleteItem", [aItem]);
             }
         };
         this.getItemOfflineFlag(aItem, opListener);
@@ -1463,11 +1462,10 @@ calStorageCalendar.prototype = {
             }
         }
     },
-    
+
     mRecEventCacheOfflineFlags: {},
     mRecTodoCacheOfflineFlags : {},
     assureRecurringItemCaches: function cSC_assureRecurringItemCaches() {
-        
         if (this.mRecItemCacheInited) {
             return;
         }

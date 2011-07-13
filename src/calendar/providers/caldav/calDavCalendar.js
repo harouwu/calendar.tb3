@@ -54,7 +54,6 @@ Components.utils.import("resource://calendar/modules/calAuthUtils.jsm");
 // calDavCalendar.js
 //
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
-const kcalICalendar = Components.interfaces.calICalendar;
 
 function calDavCalendar() {
     this.initProviderBase();
@@ -551,7 +550,7 @@ calDavCalendar.prototype = {
         let newItem = aItem.clone();
         this.adoptItemOrUseCache(newItem, useCache, aListener);
     },
-    
+
     /**
      * adoptItem()
      * we actually use doAdoptItemOrUseCache()
@@ -566,13 +565,13 @@ calDavCalendar.prototype = {
     adoptItemOrUseCache: function caldav_adoptItemOrUseCache(aItem, useCache, aListener){
         return this.doAdoptItemOrUseCache(aItem, useCache, aListener, false);
     },
-    
+
     /**
      * Performs the actual addition of the item to CalDAV store
      *
      * @param aItem       item to add
      * @param aListener   listener for method completion
-     * @param useCache    flag to use the cache in failure
+     * @param useCache    flag to use the cache when a server failure occurs
      * @param aIgnoreEtag flag to indicate ignoring of Etag
      */
     doAdoptItemOrUseCache: function caldav_doAdoptItemOrUseCache(aItem, useCache, aListener, aIgnoreEtag){
@@ -657,7 +656,7 @@ calDavCalendar.prototype = {
 
         cal.sendHttpRequest(cal.createStreamLoader(), httpchannel, addListener);
     },
-    
+
     adoptOfflineItem: function(item, listener) {
         let this_ = this;
         let opListener = {
@@ -686,7 +685,7 @@ calDavCalendar.prototype = {
     modifyItem: function caldav_modifyItem(aNewItem, aOldItem, aListener) {
         return this.modifyItemOrUseCache(aNewItem, aOldItem, true, aListener);
     },
-    
+
     modifyItemOrUseCache: function caldav_modifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener){
         let this_ = this;
         let opListener = {
@@ -694,7 +693,7 @@ calDavCalendar.prototype = {
             },
             onOperationComplete: function(calendar, status, opType, id, detail) {
                 let offline_flag = detail;
-                if ((offline_flag == "c" || offline_flag == "m") && useCache) { 
+                if ((offline_flag == "c" || offline_flag == "m") && useCache) {
                     this_.modifyOfflineItem(aNewItem, aOldItem, aListener);
                 } else {
                     this_.doModifyItemOrUseCache(aNewItem, aOldItem, useCache, aListener, false);
@@ -798,7 +797,7 @@ calDavCalendar.prototype = {
 
         cal.sendHttpRequest(cal.createStreamLoader(), httpchannel, modListener);
     },
-    
+
     modifyOfflineItem: function(newItem, oldItem, listener) {
         let this_ = this;
         let opListener = {
@@ -816,8 +815,8 @@ calDavCalendar.prototype = {
         };
         this_.mOfflineStorage.modifyItem(newItem, oldItem, opListener);
     },
-    
-    
+
+
     /**
      * deleteItem(); required by calICalendar.idl
      * the actual deletion is done in deleteItemOrUseCache()
@@ -825,14 +824,14 @@ calDavCalendar.prototype = {
      * @param aItem       item to delete
      * @param aListener   listener for method completion
      */
-    
+
     deleteItem: function caldav_deleteItem(aItem, aListener) {
         return this.deleteItemOrUseCache(aItem, true, aListener);
     },
-    
+
     deleteItemOrUseCache: function caldav_deleteItemOrUseCache(aItem, useCache, aListener){
         let this_ = this;
-        
+
         let deleteListener = { //We need a listener because the original doDeleteItemOrUseCache would return null upon successful item deletion
             onGetResult: function(calendar, status, itemType, detail, count, items) {
                 ASSERT(false, "unexpected!");
@@ -841,7 +840,7 @@ calDavCalendar.prototype = {
                 aListener.onOperationComplete(calendar, status, opType, aItem.id, aItem);
             }
         };
-        
+
         // If the item has an offline_flag associated with itself then it is better to
         // do offline deletion since the items will not be present in the
         // mItemInfoCache. The items will be reconciled whenever the server becomes available
@@ -858,7 +857,7 @@ calDavCalendar.prototype = {
             }
         };
         let storage = this_.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
-        storage.getItemOfflineFlag(aItem, opListener);  
+        storage.getItemOfflineFlag(aItem, opListener);
     },
     /**
      * Deletes item from CalDAV store.
@@ -996,7 +995,7 @@ calDavCalendar.prototype = {
 
         cal.sendHttpRequest(cal.createStreamLoader(), httpchannel, delListener);
     },
-    
+
     deleteOfflineItem: function(item, listener) {
         /* We do not delete the item from the cache, as we will need it when reconciling the cache content and the server content. */
         let storage = this.mOfflineStorage.QueryInterface(Components.interfaces.calIOfflineStorage);
@@ -2725,11 +2724,11 @@ if (!message) {
         this.disabled = false;
         // check if maybe our calendar has become available
         this.checkDavResourceType(aChangeLogListener);
-        
+
       // try to reread the ACLs
         this.aclMgr.refresh(this.uri.spec);
     }
-    
+
 };
 
 

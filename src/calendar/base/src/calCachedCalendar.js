@@ -517,7 +517,7 @@ calCachedCalendar.prototype = {
     },
     refresh: function() {
         if (this.offline) {
-            this.downwardRefresh();
+            this.downstreamRefresh();
         }
         else {
             /* we first ensure that any remaining offline items are reconciled with the calendar server */
