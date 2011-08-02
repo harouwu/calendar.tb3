@@ -817,16 +817,16 @@
           },
 
           onEndBatch: function tTO_onEndBatch() {
-              this.mBatchCount--;
-              if (this.mBatchCount == 0) {
+               this.mBatchCount--;
+               if (this.mBatchCount == 0) {
                   this.binding.refresh();
-              }
+               }
           },
 
           onLoad: function tTO_onLoad() {
-              if (this.mBatchCount == 0) {
+               if (this.mBatchCount == 0) {
                   this.binding.refresh();
-              }
+               }
           },
 
           onAddItem: function tTO_onAddItem(aItem) {

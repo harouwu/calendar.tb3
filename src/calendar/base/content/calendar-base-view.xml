@@ -131,19 +131,13 @@
             },
             onEndBatch: function onEndBatch() {
                 this.calView.mBatchCount--;
-                if (this.calView.mBatchCount == 0) {
-                    this.calView.refresh();
-                }
             },
 
             onLoad: function onLoad() {
-                this.calView.refresh();
+
             },
 
             onAddItem: function onAddItem(aItem) {
-                if (this.calView.mBatchCount) {
-                    return;
-                }
 
                 if (isToDo(aItem)) {
                     if (!aItem.entryDate || !aItem.dueDate) {
@@ -167,9 +161,6 @@
             },
 
             onModifyItem: function onModifyItem(aNewItem, aOldItem) {
-                if (this.calView.mBatchCount) {
-                    return;
-                }
 
                 if (isToDo(aNewItem) && isToDo(aOldItem) &&
                     !this.calView.mTasksInView) {
@@ -204,9 +195,6 @@
             },
 
             onDeleteItem: function onDeleteItem(aItem) {
-                if (this.calView.mBatchCount) {
-                    return;
-                }
 
                 if (isToDo(aItem)) {
                     if (!this.calView.mTasksInView) {
@@ -241,7 +229,7 @@
                     case "readOnly":
                     case "disabled":
                         // XXXvv we can be smarter about how we handle this stuff
-                        this.calView.refresh();
+//                        this.calView.refresh();
                         break;
                 }
             },

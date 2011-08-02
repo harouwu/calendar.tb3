@@ -113,7 +113,6 @@ var unifinderObserver = {
 
     onEndBatch: function uO_onEndBatch() {
         this.mInBatch = false;
-        refreshEventTree();
     },
 
     onLoad: function uO_onLoad() {
@@ -125,14 +124,10 @@ var unifinderObserver = {
             gUnifinderNeedsRefresh = true;
             unifinderTreeView.clearItems();
         }
-        if (!this.mInBatch) {
-            refreshEventTree();
-        }
     },
 
     onAddItem: function uO_onAddItem(aItem) {
         if (isEvent(aItem) &&
-            !this.mInBatch &&
             !gUnifinderNeedsRefresh &&
             unifinderTreeView.mFilter.isItemInFilters(aItem)
             ) {
@@ -146,7 +141,7 @@ var unifinderObserver = {
     },
 
     onDeleteItem: function uO_onDeleteItem(aDeletedItem) {
-        if (isEvent(aDeletedItem) && !this.mInBatch && !gUnifinderNeedsRefresh) {
+        if (isEvent(aDeletedItem) && !gUnifinderNeedsRefresh) {
             this.removeItemFromTree(aDeletedItem);
         }
     },
@@ -167,14 +162,14 @@ var unifinderObserver = {
 
     // calICompositeObserver:
     onCalendarAdded: function uO_onCalendarAdded(aAddedCalendar) {
-        if (!this.mInBatch && !aAddedCalendar.getProperty("disabled")) {
+        if (!aAddedCalendar.getProperty("disabled")) {
             addItemsFromCalendar(aAddedCalendar,
                                  addItemsFromSingleCalendarInternal);
         }
     },
 
     onCalendarRemoved: function uO_onCalendarRemoved(aDeletedCalendar) {
-        if (!this.mInBatch && !aDeletedCalendar.getProperty("disabled")) {
+        if (!aDeletedCalendar.getProperty("disabled")) {
             deleteItemsFromCalendar(aDeletedCalendar);
         }
     },

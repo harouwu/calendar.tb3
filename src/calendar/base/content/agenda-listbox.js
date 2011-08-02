@@ -846,22 +846,14 @@ agendaListbox.calendarObserver.onStartBatch = function agenda_onBatchStart() {
 agendaListbox.calendarObserver.onEndBatch =
 function() {
     this.mBatchCount--;
-    if (this.mBatchCount == 0) {
-        // Rebuild everything
-        this.agendaListbox.refreshCalendarQuery();
-    }
 };
 
 agendaListbox.calendarObserver.onLoad = function() {
-    this.agendaListbox.refreshCalendarQuery();
 };
 
 agendaListbox.calendarObserver.onAddItem =
 function observer_onAddItem(item)
 {
-  if (this.mBatchCount) {
-      return;
-  }
   if (!isEvent(item)) {
       return;
   }
@@ -889,9 +881,6 @@ function observer_onDeleteItem(item, rebuildFlag) {
 
 agendaListbox.calendarObserver.onLocalDeleteItem =
 function observer_onLocalDeleteItem(item, moveSelection) {
-    if (this.mBatchCount) {
-      return false;
-    }
     if (!isEvent(item)) {
         return false;
     }
@@ -909,9 +898,6 @@ function observer_onLocalDeleteItem(item, moveSelection) {
 
 agendaListbox.calendarObserver.onModifyItem =
 function observer_onModifyItem(newItem, oldItem) {
-    if (this.mBatchCount) {
-        return;
-    }
     var selectedItemHashId = this.onLocalDeleteItem(oldItem, false);
     if (!isEvent(newItem)) {
         return;

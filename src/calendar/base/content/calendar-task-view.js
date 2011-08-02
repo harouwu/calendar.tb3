@@ -191,7 +191,7 @@ function taskViewUpdate(filter) {
     tree.mFilter.propertyFilter  = filter;
     tree.mFilter.setDateFilter(filter);
 
-    tree.refresh();
+    //tree.refresh();
 }
 
 /**
