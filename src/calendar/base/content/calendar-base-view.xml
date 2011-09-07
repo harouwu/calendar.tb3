@@ -127,10 +127,8 @@
             calView: this,
 
             onStartBatch: function onStartBatch() {
-                this.calView.mBatchCount++;
             },
             onEndBatch: function onEndBatch() {
-                this.calView.mBatchCount--;
             },
 
             onLoad: function onLoad() {
@@ -551,7 +549,7 @@
 
       <method name="refresh">
         <body><![CDATA[
-          if (this.mBatchCount == 0 && this.isVisible()) {
+          if (this.isVisible()) {
               var refreshJob = {};
               this.mRefreshQueue.push(refreshJob);
               this.popRefreshQueue();

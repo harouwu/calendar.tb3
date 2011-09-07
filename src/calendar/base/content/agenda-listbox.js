@@ -567,10 +567,7 @@ function enableAgendaPopupMenu() {
  */
 agendaListbox.refreshCalendarQuery =
 function refreshCalendarQuery(aStart, aEnd, aCalendar) {
-    if (this.mBatchCount > 0) {
-        return;
-    }
-    var pendingRefresh = this.pendingRefresh;
+    let pendingRefresh = this.pendingRefresh;
     if (pendingRefresh) {
         if (calInstanceOf(pendingRefresh, Components.interfaces.calIOperation)) {
             this.pendingRefresh = null;
@@ -840,12 +837,10 @@ function agenda_QI(aIID) {
 
 // calIObserver:
 agendaListbox.calendarObserver.onStartBatch = function agenda_onBatchStart() {
-    this.mBatchCount++;
 };
 
 agendaListbox.calendarObserver.onEndBatch =
 function() {
-    this.mBatchCount--;
 };
 
 agendaListbox.calendarObserver.onLoad = function() {
@@ -898,13 +893,13 @@ function observer_onLocalDeleteItem(item, moveSelection) {
 
 agendaListbox.calendarObserver.onModifyItem =
 function observer_onModifyItem(newItem, oldItem) {
-    var selectedItemHashId = this.onLocalDeleteItem(oldItem, false);
+    let selectedItemHashId = this.onLocalDeleteItem(oldItem, false);
     if (!isEvent(newItem)) {
         return;
     }
     this.onAddItem(newItem);
     if (selectedItemHashId != -1) {
-        var listItem = agendaListbox.getListItemByHashId(selectedItemHashId);
+        let listItem = agendaListbox.getListItemByHashId(selectedItemHashId);
         if (listItem) {
             agendaListbox.agendaListboxControl.clearSelection();
             agendaListbox.agendaListboxControl.ensureElementIsVisible(listItem);

@@ -95,7 +95,6 @@ function getCurrentUnifinderFilter() {
  * @see calICompositeObserver
  */
 var unifinderObserver = {
-    mInBatch: false,
 
     QueryInterface: function uO_QueryInterface (aIID) {
         return cal.doQueryInterface(this,
@@ -108,11 +107,9 @@ var unifinderObserver = {
 
     // calIObserver:
     onStartBatch: function uO_onStartBatch() {
-        this.mInBatch = true;
     },
 
     onEndBatch: function uO_onEndBatch() {
-        this.mInBatch = false;
     },
 
     onLoad: function uO_onLoad() {

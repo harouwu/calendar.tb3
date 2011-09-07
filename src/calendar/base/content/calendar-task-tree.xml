@@ -801,7 +801,6 @@
       <field name="mTaskTreeObserver"><![CDATA[
       ({
           binding: this,
-          mBatchCount: 0,
 
           QueryInterface: function tTO_QueryInterface(aIID) {
               return doQueryInterface(this, null, aIID,
@@ -813,26 +812,17 @@
            * calIObserver methods and properties
            */
           onStartBatch: function tTO_onStartBatch() {
-              this.mBatchCount++;
           },
 
           onEndBatch: function tTO_onEndBatch() {
-               this.mBatchCount--;
-               if (this.mBatchCount == 0) {
-                  this.binding.refresh();
-               }
           },
 
           onLoad: function tTO_onLoad() {
-               if (this.mBatchCount == 0) {
-                  this.binding.refresh();
-               }
+              this.binding.refresh();
           },
 
           onAddItem: function tTO_onAddItem(aItem) {
-              if (cal.isToDo(aItem) &&
-                  this.binding.mFilter.isItemInFilters(aItem) &&
-                  !this.mBatchCount) { 
+              if ((cal.isToDo(aNewItem) || cal.isToDo(aOldItem))) {
                   this.binding.mTreeView.addItem(aItem);
               }
           },
@@ -852,7 +842,7 @@
           },
 
           onDeleteItem: function tTO_onDeleteItem(aDeletedItem) {
-              if (cal.isToDo(aDeletedItem) && !this.mBatchCount) {
+              if (cal.isToDo(aDeletedItem)) {
                   this.binding.mTreeView.removeItem(aDeletedItem);
               }
           },
