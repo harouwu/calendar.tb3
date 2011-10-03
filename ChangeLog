@@ -9,6 +9,10 @@
 	This allows Lightning to show the accept/decline/tentative
 	buttons for invitation updates.
 
+	* src/calendar/providers/caldav/calDavCalendar.js - we now
+	correctly register the caldav calendar (if needed) as a
+	freebusy provider
+
 2011-08-02  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* Added a patch from Mohit Singh Kanwal <mohit.kanwal@gmail.com>

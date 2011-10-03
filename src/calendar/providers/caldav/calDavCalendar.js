@@ -207,6 +207,8 @@ calDavCalendar.prototype = {
                 this.setProperty("currentStatus", Components.results.NS_OK);
                 this.readOnly = false;
                 this.disabled = false;
+		if (this.mHaveScheduling || this.hasAutoScheduling)
+		  getFreeBusyService().addProvider(this);
             } else {
                 let itemDataArray = itemData.split("\u001A");
                 let etag = itemDataArray[0];
