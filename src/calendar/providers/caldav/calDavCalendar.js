@@ -477,7 +477,13 @@ calDavCalendar.prototype = {
         switch(aName) {
 //         case "cache.updateTimer":
 //             return getPrefSafe("calendar.autorefresh.timeout");
-        case "itip.transport":
+ 	case "itip.disableRevisionChecks":
+	    // important for CalDAV-based calendars since Lightning can
+	    // have pulled the latest copy from the server, so the sequence
+	    // number (and all other information) will match the invitation
+	    // UPDATE, for example
+	    return true;
+ 	case "itip.transport":
             if (this.hasAutoScheduling) {
                 return null;
             } else if (this.hasScheduling) {
