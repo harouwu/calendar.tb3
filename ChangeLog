@@ -4,6 +4,11 @@
 	0.9 to 1.0b2. Also updated the Mozilla ticket regarding
 	this: https://bugzilla.mozilla.org/show_bug.cgi?id=459021
 
+	* Modified imip-bar.js and calDavCalendar.js to allow
+	REQUEST:UPDATE to work just like standard REQUEST methods.
+	This allows Lightning to show the accept/decline/tentative
+	buttons for invitation updates.
+
 2011-08-02  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* Added a patch from Mohit Singh Kanwal <mohit.kanwal@gmail.com>
