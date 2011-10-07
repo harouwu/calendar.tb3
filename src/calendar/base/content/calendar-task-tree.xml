@@ -822,7 +822,7 @@
           },
 
           onAddItem: function tTO_onAddItem(aItem) {
-              if ((cal.isToDo(aNewItem) || cal.isToDo(aOldItem))) {
+		  	  if (cal.isToDo(aItem)) {
                   this.binding.mTreeView.addItem(aItem);
               }
           },
