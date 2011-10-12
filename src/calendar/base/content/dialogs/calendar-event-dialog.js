@@ -1831,7 +1831,7 @@ function updateCalendar() {
     let calendar = document.getElementById("item-calendar")
                            .selectedItem.calendar;
     gIsReadOnly = calendar.readOnly;
- // We might have to change the organizer, let's see
+    // We might have to change the organizer, let's see
     if (window.organizer) {
       window.organizer.id = calendar.getProperty("organizerId");
       window.organizer.commonName = calendar.getProperty("organizerCN");
@@ -1946,7 +1946,7 @@ function updateCalendar() {
             }
         }
     }
-    /* /ACL Code */
+    /* ACL Code */
 }
 
 /**
@@ -2291,7 +2291,7 @@ function saveItem() {
             item.setProperty("X-MOZ-SEND-INVITATIONS", notifyCheckbox.checked ? "TRUE" : "FALSE");
         }
     }
-// For CalDAV calendars, we check if the organizerID is different from our
+    // For CalDAV calendars, we check if the organizerID is different from our
     // calendar-user-address-set. The organzerID is the owner of the calendar.
     // If it's different, that is because someone is acting on behalf of
     // the organizer.

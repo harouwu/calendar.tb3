@@ -308,8 +308,9 @@ function sortCalendarArray(calendars) {
 function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnCommand) {
     let calendarToUse = aCalendarToUse || aItem.calendar;
     let calendars = sortCalendarArray(getCalendarManager().getCalendars({}));
-    let indexToSelect = 0;
+    let indexToSelect = -1;
     let index = -1;
+    let forceSelection = getPrefSafe("sogo-integrator.forcePersonalCalendarSelection", false);
 
     let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
                            .getService(Components.interfaces.calICalDAVACLManager);
@@ -317,8 +318,10 @@ function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnComm
         let calendar = calendars[i];
         /* ACL code */
         let aclIncluded = true;
+	let entry = null;
+	let isNew = true;
+	    
         if (calendar.type == "caldav") {
-            let entry = null;
             let opListener = {
                 onGetResult: function(calendar, status, itemType, detail, count, items) {
                     ASSERT(false, "unexpected!");
@@ -329,7 +332,7 @@ function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnComm
                 }
             };
             aclMgr.getCalendarEntry(calendar, opListener);
-            let isNew = !(aItem.id);
+            isNew = !(aItem.id);
             aclIncluded = (!isNew || (entry && entry.userCanAddItems));
         }
 
@@ -347,11 +350,21 @@ function appendCalendarItems(aItem, aCalendarMenuParent, aCalendarToUse, aOnComm
             if (aCalendarMenuParent.localName == "menupopup") {
                 menuitem.setAttribute("type", "checkbox");
             }
-            if (calendarToUse && calendarToUse.id == calendar.id) {
+            
+	    if (indexToSelect < 0) {
+	      if (forceSelection && entry && isNew && entry.userIsOwner && calendar.uri.spec.indexOf("/Calendar/personal/") > 0) {
+		indexToSelect = index;
+	      }
+	      else if (calendarToUse && calendarToUse.id == calendar.id) {
                 indexToSelect = index;
-            }
+	      }
+	    }
         }
     }
+    
+    if (indexToSelect < 0)
+      indexToSelect = 0;
+
     return indexToSelect;
 }
 

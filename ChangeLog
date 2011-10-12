@@ -1,3 +1,13 @@
+2011-10-12  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/content/calendar-ui-utils.js -
+	appendCalendarItems(): We now honor the
+	sogo-integrator.forcePersonalCalendarSelection preference.
+	If set to true, it'll always select the personal calendar
+	of the user when creating events new events. If set to
+	false, it'll fallback to Lightning's original behavior.
+	* Bumped version number to 1.0b2.106pre5i
+
 2011-10-03  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* Ported our patch for mailing list expansion from
