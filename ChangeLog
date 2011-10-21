@@ -1,3 +1,28 @@
+2011-10-12  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* src/calendar/base/content/calendar-ui-utils.js -
+	appendCalendarItems(): We now honor the
+	sogo-integrator.forcePersonalCalendarSelection preference.
+	If set to true, it'll always select the personal calendar
+	of the user when creating events new events. If set to
+	false, it'll fallback to Lightning's original behavior.
+	* Bumped version number to 1.0b2.106pre5i
+
+2011-10-03  Ludovic Marcotte  <lmarcotte@inverse.ca>
+
+	* Ported our patch for mailing list expansion from
+	0.9 to 1.0b2. Also updated the Mozilla ticket regarding
+	this: https://bugzilla.mozilla.org/show_bug.cgi?id=459021
+
+	* Modified imip-bar.js and calDavCalendar.js to allow
+	REQUEST:UPDATE to work just like standard REQUEST methods.
+	This allows Lightning to show the accept/decline/tentative
+	buttons for invitation updates.
+
+	* src/calendar/providers/caldav/calDavCalendar.js - we now
+	correctly register the caldav calendar (if needed) as a
+	freebusy provider
+
 2011-08-02  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* Added a patch from Mohit Singh Kanwal <mohit.kanwal@gmail.com>

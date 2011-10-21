@@ -947,12 +947,19 @@ function onAttrModified(event) {
     var target = event.originalTarget;
     if (target.hasAttribute("anonid") &&
         target.getAttribute("anonid") == "input" &&
-        event.attrName == "focused" &&
-        event.newValue == "true") {
+        event.attrName == "focused") {
         var attendees = document.getElementById("attendees-list");
-        var grid = document.getElementById("freebusy-grid");
-        if (grid.firstVisibleRow != attendees.firstVisibleRow) {
-            grid.firstVisibleRow = attendees.firstVisibleRow;
+        if (event.newValue == "true") {
+	  var grid = document.getElementById("freebusy-grid");
+            if (grid.firstVisibleRow != attendees.firstVisibleRow) {
+                grid.firstVisibleRow = attendees.firstVisibleRow;
+            }
+        } else {
+            if (!target.lastListCheckedValue
+                || target.lastListCheckedValue != target.value) {
+                attendees.resolvePotentialList(target);
+                target.lastListCheckedValue = target.value;
+            }
         }
     }
 

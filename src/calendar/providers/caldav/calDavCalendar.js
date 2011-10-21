@@ -207,6 +207,8 @@ calDavCalendar.prototype = {
                 this.setProperty("currentStatus", Components.results.NS_OK);
                 this.readOnly = false;
                 this.disabled = false;
+		if (this.mHaveScheduling || this.hasAutoScheduling)
+		  getFreeBusyService().addProvider(this);
             } else {
                 let itemDataArray = itemData.split("\u001A");
                 let etag = itemDataArray[0];
@@ -477,7 +479,13 @@ calDavCalendar.prototype = {
         switch(aName) {
 //         case "cache.updateTimer":
 //             return getPrefSafe("calendar.autorefresh.timeout");
-        case "itip.transport":
+ 	case "itip.disableRevisionChecks":
+	    // important for CalDAV-based calendars since Lightning can
+	    // have pulled the latest copy from the server, so the sequence
+	    // number (and all other information) will match the invitation
+	    // UPDATE, for example
+	    return true;
+ 	case "itip.transport":
             if (this.hasAutoScheduling) {
                 return null;
             } else if (this.hasScheduling) {

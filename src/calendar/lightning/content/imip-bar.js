@@ -393,7 +393,6 @@ function ltnItipOptions(itipItem, rc, actionFunc) {
             case "REPLY":
                 // fall-thru intended
             case "PUBLISH:UPDATE":
-            case "REQUEST:UPDATE-MINOR":
                 imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUpdateText"));
                 button1.setAttribute("label", ltnGetString("lightning", "imipUpdate.label"));
                 button1.setAttribute("oncommand", "return ltnExecAction();");
@@ -405,6 +404,7 @@ function ltnItipOptions(itipItem, rc, actionFunc) {
                 showElement(button1);
                 break;
             case "REQUEST:UPDATE":
+            case "REQUEST:UPDATE-MINOR":
                 imipBar.setAttribute("label", ltnGetString("lightning", "imipBarUpdateText"));
                 // fall-thru intended
             case "REQUEST": {
