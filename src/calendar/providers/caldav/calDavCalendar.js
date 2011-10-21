@@ -2726,9 +2726,10 @@ if (!message) {
         this.checkDavResourceType(aChangeLogListener);
 
       // try to reread the ACLs
-        this.aclMgr.refresh(this.uri.spec);
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.refresh(this.uri.spec);
     }
-
 };
 
 
