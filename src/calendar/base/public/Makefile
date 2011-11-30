@@ -1,10 +1,10 @@
 XPIDL_MODULE = calbase
 
-XULRUNNER = /usr/lib/xulrunner-devel-1.9.1
+XULRUNNER = /usr/lib/xulrunner-devel-7.0
 # INCLUDE_DIR = $(XULRUNNER)/sdk/idl
-INCLUDE_DIR = /usr/share/idl/xulrunner-1.9.1/unstable
+INCLUDE_DIR = /usr/share/idl/xulrunner-7.0
 XPIDL = $(XULRUNNER)/bin/xpidl
-XPT_LINK = $(XULRUNNER)/bin/xpt_link
+XPT_LINK = /usr/bin/python $(XULRUNNER)/sdk/bin/xpt.py link
 
 XPIDLSRCS = calIAlarm.idl \
             calIAlarmService.idl \
