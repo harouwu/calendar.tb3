@@ -1,3 +1,9 @@
+2011-11-30  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/src/calCalendarManager.js (registerCalendar):
+	added a "useCache" parameter that ensures that the new calendar is
+	a cached instance before any cache operation occurs.
+
 2011-10-12  Ludovic Marcotte  <lmarcotte@inverse.ca>
 
 	* src/calendar/base/content/calendar-ui-utils.js -

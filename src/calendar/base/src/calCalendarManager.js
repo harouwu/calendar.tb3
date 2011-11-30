@@ -663,7 +663,7 @@ calCalendarManager.prototype = {
         }
     },
 
-    registerCalendar: function(calendar) {
+    registerCalendar: function(calendar, useCache) {
         // bail if this calendar (or one that looks identical to it) is already registered
         cal.ASSERT(calendar.id === null, "[calCalendarManager::registerCalendar] calendar already registered!", true);
         this.assureCache();
@@ -672,6 +672,13 @@ calCalendarManager.prototype = {
         cal.setPref(getPrefBranchFor(calendar.id) + "type", calendar.type);
         cal.setPref(getPrefBranchFor(calendar.id) + "uri", calendar.uri.spec);
 
+        if (useCache === undefined) {
+            useCache = false;
+        }
+        cal.setPref(getPrefBranchFor(calendar.id) + "cache.enabled", useCache);
+        if (useCache && !(calendar instanceof calCachedCalendar)) {
+            calendar = new calCachedCalendar(calendar);
+        }
         this.setupCalendar(calendar);
         flushPrefs();
 
