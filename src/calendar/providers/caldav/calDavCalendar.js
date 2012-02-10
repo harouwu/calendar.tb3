@@ -2737,6 +2737,7 @@ if (!message) {
         let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
                                .getService(Components.interfaces.calICalDAVACLManager);
         aclMgr.refresh(this.uri.spec);
+        this.mACLEntry = null;
     }
 };
 
