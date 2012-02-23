@@ -1,5 +1,9 @@
 2012-02-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
+	* src/calendar/base/content/calendar-multiday-view.xml
+	(computeEventMap): sort items based occurring at the same time
+	based on their calendar owner and order in the list.
+
 	* src/calendar/base/content/agenda-listbox.js
 	(agendaListbox.addItem): do not prevent same items from different
 	calendars from being displayed.

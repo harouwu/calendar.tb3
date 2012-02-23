@@ -284,6 +284,16 @@
 
     <implementation>
       <constructor><![CDATA[
+        this.recomputeCalendarOrder(getPrefSafe("calendar.list.sortOrder", "").split(" "));
+        let calendarListTree = document.getElementById("calendar-list-tree-widget");
+        if (calendarListTree)  {
+            let this_ = this;
+            function changeListener(event) {
+                this_.recomputeCalendarOrder(event.sortOrder);
+                this_.relayout();
+            }
+            calendarListTree.addEventListener("SortOrderChanged", changeListener, true);
+        }
         this.mEventInfos = Array();
         this.mTimezone = UTC();
       ]]></constructor>
@@ -323,6 +333,9 @@
       <field name="mCreatedNewEvent">false</field>
       <field name="mEventToEdit">null</field>
       <field name="mSelectedItemIds">new Object()</field>
+
+      <!-- cache for calendar orders for relayout() -->
+      <field name="mCalendarOrder">null</field>
 
       <!-- properties -->
       <property name="pixelsPerMinute">
@@ -661,7 +674,6 @@
 
       <method name="relayout">
         <body><![CDATA[
-
           if (this.mLayoutBatchCount > 0)
               return;
           this.clear();
@@ -866,6 +878,19 @@
         ]]></body>
       </method>
 
+      <method name="recomputeCalendarOrder">
+        <parameter name="aIdArray"/>
+        <body><![CDATA[
+            let newOrder = {};
+            for (let i = 0; i < aIdArray.length; i++) {
+                let aId = aIdArray[i];
+                newOrder[aId] = i;
+            }
+            this.mCalendarOrder = newOrder;
+          ]]>
+        </body>
+      </method>
+
       <method name="computeEventMap">
         <body><![CDATA[
           /* We're going to create a series of 'blobs'.  A blob is a series of
@@ -880,19 +905,87 @@
            *
            * An item with no conflicts will have startCol: 0 and colSpan: 1.
            */
+
           var blobs = new Array();
           var currentBlob = new Array();
+
+          let this_ = this;
+
+          function compareByCalendarOwner(aCalendar, bCalendar) {
+              let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                                     .getService(Components.interfaces.calICalDAVACLManager);
+
+              let aACLEntry = null;
+              if (aCalendar.type == "caldav") {
+                  let realCalendar = aCalendar.getProperty("cache.uncachedCalendar");
+                  if (!realCalendar) {
+                      realCalendar = calendar;
+                  }
+                  let opListener = {
+                      onGetResult: function(calendar, status, itemType, detail, count, items) {
+                          ASSERT(false, "unexpected!");
+                      },
+                      onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                          aACLEntry = opDetail;
+                      }
+                  };
+                  aclMgr.getCalendarEntry(realCalendar, opListener);
+              }
+              let aCondition = (aACLEntry && aACLEntry.hasAccessControl && aACLEntry.userIsOwner);
+
+              let bACLEntry = null;
+              if (bCalendar.type == "caldav") {
+                  let realCalendar = bCalendar.getProperty("cache.uncachedCalendar");
+                  if (!realCalendar) {
+                      realCalendar = calendar;
+                  }
+                  let opListener = {
+                      onGetResult: function(calendar, status, itemType, detail, count, items) {
+                          ASSERT(false, "unexpected!");
+                      },
+                      onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                          bACLEntry = opDetail;
+                      }
+                  };
+                  aclMgr.getCalendarEntry(realCalendar, opListener);
+              }
+              let bCondition = (bACLEntry && bACLEntry.hasAccessControl && bACLEntry.userIsOwner);
+
+              let cmp = 0;
+              if (aCondition) {
+                  if (!bCondition) {
+                      cmp = -1;
+                  }
+              }
+              else if (bCondition) {
+                  cmp = 1;
+              }
+
+              return cmp;
+          }
+
+          function compareByCalendarOrder(aCalendar, bCalendar) {
+              let orderA = this_.mCalendarOrder[aCalendar.id] || -1;
+              let orderB = this_.mCalendarOrder[bCalendar.id] || -1;
+              return (orderA - orderB);
+          }
+
           function sortByStart(aEventInfo, bEventInfo) {
               // If you pass in tasks without both entry and due dates, I will
               // kill you
-              var startComparison = aEventInfo.layoutStart.compare(bEventInfo.layoutStart);
-              if (startComparison != 0) {
-                  return startComparison;
-              } else {
-                  // If the items start at the same time, return the longer one
-                  // first
-                  return bEventInfo.layoutEnd.compare(aEventInfo.layoutEnd);
+              let cmp = aEventInfo.layoutStart.compare(bEventInfo.layoutStart);
+              if (cmp == 0) {
+                  cmp = compareByCalendarOwner(aEventInfo.event.calendar, bEventInfo.event.calendar);
+                  if (cmp == 0) {
+                      cmp = compareByCalendarOrder(aEventInfo.event.calendar, bEventInfo.event.calendar);
+                      if (cmp == 0) {
+                          // If the items start at the same time, return the longer one
+                          // first
+                          cmp = bEventInfo.layoutEnd.compare(aEventInfo.layoutEnd);
+                      }
+                  }
               }
+              return cmp;
           }
           var self = this;
           this.mEventInfos.forEach(function(aEventInfo) {
@@ -2314,7 +2407,7 @@
       ]]></handler>
 
       <handler event="mouseout"><![CDATA[
-        if (!this.mEditing && this.mInMouseDown && this.parentColumn) { 
+        if (!this.mEditing && this.mInMouseDown && this.parentColumn) {
             if (this.editingTimer) {
                 clearTimeout(this.editingTimer);
                 this.editingTimer = null;
@@ -2860,7 +2953,7 @@
                   if (occStart.timezone != displayTZ) {
                       occStart = occStart.getInTimezone(displayTZ);
                   }
-                  if (occEnd.timezone != displayTZ) { 
+                  if (occEnd.timezone != displayTZ) {
                       occEnd = occEnd.getInTimezone(displayTZ);
                   }
                   // If crosses midnite in current TZ, set end just
