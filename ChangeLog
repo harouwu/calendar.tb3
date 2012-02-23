@@ -1,3 +1,9 @@
+2012-02-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/agenda-listbox.js
+	(agendaListbox.addItem): do not prevent same items from different
+	calendars from being displayed.
+
 2011-11-30  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/src/calCalendarManager.js (registerCalendar):

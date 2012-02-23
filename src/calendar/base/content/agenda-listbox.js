@@ -140,7 +140,7 @@ function onCheckboxChange(event) {
     period.open= lopen;
     // as the agenda-checkboxes are only transient we have to set the "checked"
     // attribute at their hidden origins to make that attribute persistent.
-    document.getElementById(listItem.id + "-hidden").setAttribute("checked", 
+    document.getElementById(listItem.id + "-hidden").setAttribute("checked",
                             periodCheckbox.getAttribute("checked"));
     if (lopen) {
         agendaListbox.refreshCalendarQuery(period.start, period.end);
@@ -158,7 +158,7 @@ function onCheckboxChange(event) {
             }
         } while (!leaveloop);
     }
-    calendarController.onSelectionChanged({detail: []});    
+    calendarController.onSelectionChanged({detail: []});
 };
 
 /**
@@ -337,9 +337,7 @@ function addItem(aItem) {
         let complistItem = period.listItem;
         let visible = complistItem.getCheckbox().checked;
         if ((aItem.startDate.isDate) && (period.duration == 1)) {
-            if (this.getListItems(aItem, period).length == 0) {
-                this.addItemBefore(aItem, period.listItem.nextSibling, period, visible);
-            }
+            this.addItemBefore(aItem, period.listItem.nextSibling, period, visible);
         } else {
             do {
                 complistItem = complistItem.nextSibling;
@@ -348,20 +346,8 @@ function addItem(aItem) {
                     break;
                 } else {
                     var compitem = complistItem.occurrence;
-                    if (this.isSameEvent(aItem, compitem)) {
-                        // The same event occurs on several calendars but we only
-                        // display the first one.
-                        // TODO: find a way to display this special circumstance
-                        break;
-                    } else if (this.isBefore(aItem, compitem)) {
-                        if (this.isSameEvent(aItem, compitem)) {
-                            newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
-                            break
-                        } else {
-                            newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
-                            break;
-                        }
-                    }
+                    newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
+                    break;
                 }
             } while (complistItem)
         }
