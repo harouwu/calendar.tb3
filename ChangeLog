@@ -1,3 +1,9 @@
+2012-02-24  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/dialogs/calendar-event-dialog.xul:
+	added a hack to prevent status icons from disappearing when
+	"gtk-menu-images" is set to false with GTK themes.
+
 2012-02-23  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/content/calendar-multiday-view.xml

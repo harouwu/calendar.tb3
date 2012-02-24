@@ -1138,7 +1138,7 @@
                   accesskey="&event.email.tentative.attendees.accesskey;"
                   command="cmd_email_undecided"/>
         <menuseparator id="attendee-popup-separator"/>
-        <menuitem class="status-icon menuitem-iconic" oncommand="sendMailToAttendees([event.target.attendee])" crop="end"/>
+        <menuitem class="status-icon menuitem-iconic" type="dont-hide-icon" oncommand="sendMailToAttendees([event.target.attendee])" crop="end"/>
       </popup>
       <menupopup id="attachment-popup">
             <menuitem id="attachment-popup-open"
