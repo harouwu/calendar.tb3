@@ -53,3 +53,6 @@
 <!ENTITY pref.autorefresh.label "Obnoviť kalendáre každých" >
 <!ENTITY pref.autorefresh.accesskey "O" >
 
+<!ENTITY pref.classification.label "Default item classifications">
+<!ENTITY pref.default-events-classification.label "Events classification:">
+<!ENTITY pref.default-todos-classification.label "Tasks classification:">

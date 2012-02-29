@@ -1,3 +1,13 @@
+2012-02-29  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/preferences/general.xul: added
+	preference widgets for the default classification of events and
+	todos.
+
+	* src/calendar/base/src/calUtils.js (createEvent, createTodo):
+	sets the event or task classification based on the preferences
+	defined in the preferences mentionned above.
+
 2012-02-24  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/content/dialogs/calendar-event-dialog.xul:

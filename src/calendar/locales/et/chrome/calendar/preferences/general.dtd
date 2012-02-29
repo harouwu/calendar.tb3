@@ -52,3 +52,6 @@
 <!ENTITY pref.refreshbox.label "Värskendamise sätted" >
 <!ENTITY pref.autorefresh.label "Värskenda kalendreid pärast iga" >
 <!ENTITY pref.autorefresh.accesskey "V" >
+<!ENTITY pref.classification.label "Default item classifications">
+<!ENTITY pref.default-events-classification.label "Events classification:">
+<!ENTITY pref.default-todos-classification.label "Tasks classification:">

@@ -52,3 +52,6 @@
 <!ENTITY pref.refreshbox.label "Beállítások frissítése" >
 <!ENTITY pref.autorefresh.label "Naptárak frissítése" >
 <!ENTITY pref.autorefresh.accesskey "N">
+<!ENTITY pref.classification.label "Default item classifications">
+<!ENTITY pref.default-events-classification.label "Events classification:">
+<!ENTITY pref.default-todos-classification.label "Tasks classification:">

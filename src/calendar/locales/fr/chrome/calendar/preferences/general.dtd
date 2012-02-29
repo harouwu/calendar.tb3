@@ -52,3 +52,6 @@
 <!ENTITY pref.refreshbox.label "Paramètres d'actualisation" >
 <!ENTITY pref.autorefresh.label "Fréquence d'actualisation des agendas :" >
 <!ENTITY pref.autorefresh.accesskey "a" >
+<!ENTITY pref.classification.label "Classifications par défaut">
+<!ENTITY pref.default-events-classification.label "Événements :">
+<!ENTITY pref.default-todos-classification.label "Tâches :">

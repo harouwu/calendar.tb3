@@ -53,3 +53,6 @@
 <!ENTITY pref.refreshbox.label "Atualizar" >
 <!ENTITY pref.autorefresh.label "Atualizar calendários a cada" >
 <!ENTITY pref.autorefresh.accesskey "A" >
+<!ENTITY pref.classification.label "Default item classifications">
+<!ENTITY pref.default-events-classification.label "Events classification:">
+<!ENTITY pref.default-todos-classification.label "Tasks classification:">

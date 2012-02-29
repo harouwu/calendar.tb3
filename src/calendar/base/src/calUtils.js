@@ -53,6 +53,13 @@ function createEvent(aIcalString) {
     if (aIcalString) {
         event.icalString = aIcalString;
     }
+    else {
+        let classification = getPrefSafe("calendar.events.default-classification", null);
+        if (classification) {
+            event.privacy = classification;
+        }
+    }
+
     return event;
 }
 
@@ -67,6 +74,13 @@ function createTodo(aIcalString) {
     if (aIcalString) {
         todo.icalString = aIcalString;
     }
+    else {
+        let classification = getPrefSafe("calendar.todos.default-classification", null);
+        if (classification) {
+            todo.privacy = classification;
+        }
+    }
+
     return todo;
 }
 
