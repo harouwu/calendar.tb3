@@ -1,3 +1,10 @@
+2012-06-12  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
+
+	* src/calendar/base/content/agenda-listbox.js: reverted patch from
+	2012-02-23. Instead we play with the instances of invitations that
+	are found in different calendars to only display those from the
+	current user, if present.
+
 2012-02-29  Wolfgang Sourdeau  <wsourdeau@inverse.ca>
 
 	* src/calendar/base/content/preferences/general.xul: added

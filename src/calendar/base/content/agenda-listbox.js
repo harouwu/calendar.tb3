@@ -315,6 +315,30 @@ function addItemBefore(aNewItem, aAgendaItem, aPeriod, visible) {
     return newelement;
 }
 
+/* WARNING: to be invoked only when we know for sure that the corresponding */
+/* calendar item has been initialized. */
+function testUserIsOwner(aItem) {
+    let userIsOwner = true;
+
+    let opListener = {
+        onGetResult: function(calendar, status, itemType, detail, count, items) {
+            ASSERT(false, "unexpected!");
+        },
+        onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+            let entry = opDetail;
+            userIsOwner = entry.userIsOwner;
+        }
+    };
+
+    if (aItem.calendar.type == "caldav") {
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.getCalendarEntry(aItem.calendar, opListener);
+    }
+
+    return userIsOwner;
+}
+
 /**
  * Adds an item to the agenda listbox. This function finds the correct period
  * for the item and inserts it correctly so the period stays sorted.
@@ -327,6 +351,37 @@ function addItem(aItem) {
     if (!isEvent(aItem)) {
         return null;
     }
+
+    let userIsOwner = true;
+    if (aItem.calendar.type == "caldav") {
+        let entry = null;
+        let restart = false;
+        let opListener = {
+            onGetResult: function(calendar, status, itemType, detail, count, items) {
+                ASSERT(false, "unexpected!");
+            },
+            onOperationComplete: function(opCalendar, opStatus, opType, opId, opDetail) {
+                entry = opDetail;
+                if (restart) {
+                    agendaListbox.addItem(aItem);
+                }
+            }
+        };
+
+        let aclMgr = Components.classes["@inverse.ca/calendar/caldav-acl-manager;1"]
+                               .getService(Components.interfaces.calICalDAVACLManager);
+        aclMgr.getCalendarEntry(aItem.calendar, opListener);
+        /* we make sure this action is performed only when the acl entry is
+         queried asynchronously, which guarantees us that the "userIsOwner" is
+         accurate */
+        if (!entry) {
+            restart = true;
+            return null;
+        }
+
+        userIsOwner = entry.userIsOwner;
+    }
+
     var periods = this.findPeriodsForItem(aItem);
     if (periods.length == 0) {
         return null;
@@ -337,7 +392,33 @@ function addItem(aItem) {
         let complistItem = period.listItem;
         let visible = complistItem.getCheckbox().checked;
         if ((aItem.startDate.isDate) && (period.duration == 1)) {
-            this.addItemBefore(aItem, period.listItem.nextSibling, period, visible);
+            let existingItems = this.getListItems(aItem, period);
+            let doAddItem = true;
+            if (existingItems.length > 0) {
+                if (userIsOwner) {
+                    /* we remove all existing entries prior to adding the new
+                     one, since we now the latter is owned by the user */
+                    for (let i = existingItems.length - 1; i >= 0; i--) {
+                        this.agendaListboxControl.removeChild(existingItems[i]);
+                    }
+                }
+                else {
+                    /* we accept to add the new item only if an instance that
+                     would be owned by the user is not already present */
+                    let hasOwnedItem = false;
+                    let i = 0;
+                    while (!hasOwnedItem && i < existingItems.length) {
+                        var testItem = existingItems[i];
+                        if (testUserIsOwner(testItem)) {
+                            hasOwnedItem = true;
+                        }
+                    }
+                    doAddItem = !hasOwnedItem;
+                }
+            }
+            if (doAddItem) {
+                this.addItemBefore(aItem, period.listItem.nextSibling, period, visible);
+            }
         } else {
             do {
                 complistItem = complistItem.nextSibling;
@@ -346,8 +427,46 @@ function addItem(aItem) {
                     break;
                 } else {
                     var compitem = complistItem.occurrence;
-                    newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
-                    break;
+                    if (this.isSameEvent(aItem, compitem)) {
+                        if (userIsOwner) {
+                            newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
+                            this.agendaListboxControl.removeChild(complistItem);
+                        }
+                        break;
+                    } else if (this.isBefore(aItem, compitem)) {
+                        if (userIsOwner) {
+                            /* insert item and remove any other similar items
+                             afterwards */
+                            newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
+                            while (this.isEventListItem(complistItem)) {
+                                compitem = complistItem.occurrence;
+                                var newListItem = complistItem.nextSibling;
+                                if (this.isSameEvent(aItem, compitem)) {
+                                    this.agendaListboxControl.removeChild(complistItem);
+                                }
+                                complistItem = newListItem;
+                            }
+                        }
+                        else {
+                            /* wander through the rest of the list to see if
+                             an "owned" version of the item is already
+                             present, prior to inserting it */
+                            var doInsert = true;
+                            var testComplistItem = complistItem;
+                            while (doInsert && this.isEventListItem(testComplistItem)) {
+                                if (testUserIsOwner(testComplistItem.occurrence)) {
+                                    doInsert = false;
+                                }
+                                else {
+                                    testComplistItem = testComplistItem.nextSibing;
+                                }
+                            }
+                            if (doInsert) {
+                                newlistItem = this.addItemBefore(aItem, complistItem, period, visible);
+                            }
+                        }
+                        break;
+                    }
                 }
             } while (complistItem)
         }
