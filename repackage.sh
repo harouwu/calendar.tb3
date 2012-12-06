@@ -1,9 +1,10 @@
 #!/bin/bash -e
 
 # Variables
+GIT_REV="`git rev-parse --verify HEAD | cut -c1-10`"
 BASE="`pwd`"
 DATE="`date +%Y%m%d%H%M%S`"
-VERSION=1.0b2.111i
+VERSION=1.0b2.111i-$GIT_REV
 
 # Cleanin up the leftovers
 alias cp=cp
